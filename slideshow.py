@@ -48,7 +48,7 @@ class Deck(gobject.GObject):
         'instructor-ink-removed' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_INT, gobject.TYPE_INT)),
     }
     
-    def __init__(self, base="/nfs/show"):
+    def __init__(self, slidename, base="/nfs/show"):
         gobject.GObject.__init__(self)
         self.__logger = logging.getLogger('Deck')
         self.__base = base
@@ -58,6 +58,7 @@ class Deck(gobject.GObject):
         self.__active_sub = -1
         self.__self_text = ""
         self.__text_tag = None
+        self.__title_slide_name = slidename
         
         # Compute the path to the deck.xml file and read it if it exists;
         # otherwise we'll create a new XML Document
@@ -82,8 +83,8 @@ class Deck(gobject.GObject):
     def set_title(self, title):
         self.__title = title
 
-    def get_title(self):
-        print 'get_title', self.__title
+    def get_title(self, id):
+        print 'get_title', id, self.__title
         if len(self.__title) > 0:
             return self.__title
         else:
@@ -103,6 +104,8 @@ class Deck(gobject.GObject):
             nodes = self.__dom.getElementsByTagName("title")
             if len(nodes) > 0:
                 self.__title = nodes[0].firstChild.data
+            else:
+                print 'no deck title', self.__dom.toprettyxml()
         else:
             self.__deck = self.__dom.createElement("deck")
             self.__dom.appendChild(self.__deck)
@@ -112,7 +115,7 @@ class Deck(gobject.GObject):
             self.__deck.appendChild(title)
             splash = self.__dom.createElement("slide")
             layer = self.__dom.createElement("layer")
-            layer.appendChild(self.__dom.createTextNode("splash.svg"))
+            layer.appendChild(self.__dom.createTextNode(self.__title_slide_name))
             splash.appendChild(layer)
             self.__deck.appendChild(splash)
         print "Deck.__title=", self.__title
@@ -152,7 +155,17 @@ class Deck(gobject.GObject):
         pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(inpath, w, h)
         #scaled_buf = pixbuf.scale.simple(w, h, gtk.gdk.INTERP_BILINEAR)
         pixbuf.save(outpath, "png")
-        
+
+    def get_SlideTitle(self):
+        n = self.getIndex()
+        slide = self.__slides[n]
+        return slide.getAttribute('title')
+
+    def set_SlideTitle(self, slideTitle):
+        n = self.getIndex()
+        slide = self.__slides[n]
+        slide.setAttribute('title', slideTitle)
+
     def addSlide(self,file_path):
 
         INSTANCE = path(activity.get_activity_root()) / 'instance'

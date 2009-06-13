@@ -26,13 +26,18 @@ import os
 import utils
 import time
 import logging
+import hulahop
+from sugar import env
+hulahop.startup(os.path.join(env.get_profile_path(), 'gecko'))
+from hulahop.webview import WebView
 
 class Renderer(object):
-    def __init__(self, deck):
+    def __init__(self, activity, deck):
         """Constructs a new SlideRenderer that will render slides from deck"""
         self.__logger = logging.getLogger('Renderer')
         self.__logger.setLevel('error')
         self.__deck = deck
+        self.__activity = activity
 
     def getSlideDimensionsFromFirstLayer(self, n=None):
         """Returns the [width, height] of the first slide layer"""
@@ -142,4 +147,13 @@ class Renderer(object):
                 ctx.set_source_pixbuf(jpg_pixbuf, 0, 0)
                 ctx.rectangle(0, 0, jpg_pixbuf.get_width(), jpg_pixbuf.get_height())
                 ctx.fill()
+            elif type == "html":
+                #use hulahop to display
+                print 'html slide', layer
+                scrn4 = self.__activity.set_screen(3)
+                wv = WebView()
+                print 'uri', 'file://' + layer
+                wv.load_uri('file://' + layer)
+                wv.show()
+                scrn4.add(wv)
             self.__logger.debug("Finished drawing layer at "+ str(time.time() - timerstart))

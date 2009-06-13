@@ -28,7 +28,7 @@ import gobject
 import pango
 import logging
 import threading
-import os, sys
+import os, sys, time
 import utils
 from path import path
 import slideshow
@@ -393,7 +393,7 @@ class MakeToolBar(gtk.Toolbar):
         ds_mounts = datastore.mounts()
         pendrive = -1
         for i in range(0, len(ds_mounts), 1):
-            print 'mount', i, ds_mounts[i]['uri']
+            print 'mount', i, ds_mounts[i]['uri'], ds_mounts[i]['title'], ds_mounts[i]['id']
             if ds_mounts[i]['uri'].find('datastore') > 0:
                 journal = i
             else:
@@ -432,7 +432,50 @@ class MakeToolBar(gtk.Toolbar):
             self.insert(self.__pendrivebutton, -1)
             self.__pendrivebutton.show()
 
+        # deck title display and edit
+        self.__decktitle_item = gtk.ToolItem()
+
+        self.__decktitle = gtk.Entry()
+        self.__decktitle.set_text(self.deck.get_title(1))
+        self.__decktitle.set_alignment(0)
+        self.__decktitle.connect('activate', self.decktitle_change_cb)
+
+        self.__decktitle.set_width_chars(20)
+
+        self.__decktitle_item.add(self.__decktitle)
+        self.__decktitle.show()
+
+        self.insert(self.__decktitle_item, -1)
+        self.__decktitle_item.show()
+
+        # slide title display and edit
+        self.__slidetitle_item = gtk.ToolItem()
+
+        self.__slidetitle = gtk.Entry()
+        self.__slidetitle.set_text("Slide 0")
+        self.__slidetitle.set_alignment(0)
+        self.__slidetitle.connect('activate', self.slidetitle_change_cb)
+        self.deck.connect('slide-redraw', self.slidetitle_changed_cb)
+
+        self.__slidetitle.set_width_chars(20)
+
+        self.__slidetitle_item.add(self.__slidetitle)
+        self.__slidetitle.show()
+
+        self.insert(self.__slidetitle_item, -1)
+        self.__slidetitle_item.show()
+
         self.show()
+
+    def decktitle_change_cb(self, widget):
+        self.deck.set_title(self.__decktitle.get_text(3))
+        print 'decktitle change', self.__decktitle.get_text(), self.deck.get_title()
+
+    def slidetitle_change_cb(self, widget):
+        self.deck.set_slideTitle(self.__slidetitle.get_text())
+
+    def slidetitle_changed_cb(self, widget):
+        self.__slidetitle.set_text(self.deck.get_slideTitle())
 
     def new(self, widget):
         print 'New slideshow'
@@ -443,22 +486,25 @@ class MakeToolBar(gtk.Toolbar):
 
     def open(self, widget):
         print 'Open slideshow'
-        #here we need a listview to show existing cpxo bundles (all sources)
-        #there should be a standard 'open' function for both read_file and open
+        scrn3 = self.activity.set_screen(2)
+        treeview = scrn3.get_treeView()
+        print 'set_cpxo_store'
+        treeview.set_model(scrn3.set_store())
+        print 'slideshow treeview model set'
 
     def chooseimage(self, widget, source, pth):
-        scrn1, scrn2 = self.activity.get_window()
+        print 'chooseimage', source, pth
+        scrn2 = self.activity.set_screen(1)
+        time.sleep(30)
+        print 'sleep over'
         treeview = scrn2.get_treeView()
         print 'set_store', source, pth
         treeview.set_model(scrn2.set_store(source, pth))
-        scrn1.hide()
-        scrn2.show()
+        print 'treeview model set'
 
     def showhtml(self, widget):
-        scrn1, scrn2, scrn3 = self.activity.get_window()
-        scrn1.hide()
-        scrn2.hide()
-        #we need to show blank editable tiddly or web page
-        scrn3.show()
+        self.activity.set_screen(4)
+        #intended to show listview of available html templates/slides
+        #future feature, not implemented
        
         
