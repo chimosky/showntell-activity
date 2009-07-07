@@ -27,6 +27,7 @@ import utils
 import time
 import logging
 import hulahop
+import xml.dom.minidom
 from sugar import env
 hulahop.startup(os.path.join(env.get_profile_path(), 'gecko'))
 from hulahop.webview import WebView
@@ -38,6 +39,9 @@ class Renderer(object):
         self.__logger.setLevel('error')
         self.__deck = deck
         self.__activity = activity
+        self.__wv = WebView()
+        self.__wv.show()
+        self.__htmlflag = True
 
     def getSlideDimensionsFromFirstLayer(self, n=None):
         """Returns the [width, height] of the first slide layer"""
@@ -127,6 +131,7 @@ class Renderer(object):
         self.__logger.debug("Got layers at " + str(time.time() - timerstart))
         for layer in layers:
             type = utils.getFileType(layer)
+            print 'Drawing layer ', type, layer
             self.__logger.debug("Drawing layer " + str(layer) +" " + str(scale) + " at "  + str(time.time() - timerstart))
             print 'drawing layer', type, str(layer)
             if type == "svg":
@@ -149,11 +154,11 @@ class Renderer(object):
                 ctx.fill()
             elif type == "html":
                 #use hulahop to display
-                print 'html slide', layer
+                print 'html slide', self.__htmlflag, layer
                 scrn4 = self.__activity.set_screen(3)
-                wv = WebView()
-                print 'uri', 'file://' + layer
-                wv.load_uri('file://' + layer)
-                wv.show()
-                scrn4.add(wv)
+                if self.__htmlflag:
+                    scrn4.add(self.__wv)
+                    self.__htmlflag = False
+                self.__wv.load_uri('file://' + layer)
+                self.__wv.show()
             self.__logger.debug("Finished drawing layer at "+ str(time.time() - timerstart))

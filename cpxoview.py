@@ -11,9 +11,10 @@
 
 import sys, os
 import gtk
+from sugar.activity import activity
 from sugar.datastore import datastore
 from path import path
-
+from time import strftime
 
 class Cpxoview(gtk.VBox):
     def __init__(self, activity, deck):
@@ -53,26 +54,35 @@ class Cpxoview(gtk.VBox):
     def get_treeView(self):
         return self.treeView
 
-    def set_store(self):
-        print 'set_store'
+    def set_store(self, src):
+        print 'set_store', src
         store = gtk.ListStore(str, str, str)
         #get objects from the local datastore
-        ds_objects, num_objects = datastore.find({'mime_type':['application/x-classroompresenter']})
-        for f in ds_objects:
-            try:
-                title = f.metadata['title']
-            except:
-                title = ""
-            try:
-                description = f.metadata['description']
-            except:
-                description = ''
-            try:
-                timestamp = f.metadata['timestamp']
-            except:
-                timestamp = "0"
-            store.append([title, description, timestamp])
-            f.destroy()
+        if src == "datastore":
+            ds_objects, num_objects = datastore.find({'mime_type':['application/x-classroompresenter']})
+            for f in ds_objects:
+                try:
+                    title = f.metadata['title']
+                except:
+                    title = ""
+                try:
+                    description = f.metadata['description']
+                except:
+                    description = ''
+                try:
+                    t = int(f.metadata['timestamp'])
+                except:
+                    t = "0"
+                #tstamp = strftime("%a, %b, %Y %H %M", t)
+                store.append([title, description, t])
+                f.destroy()
+        elif src == "activity":
+            #source is activity bundle
+            srcdir = path(activity.get_bundle_path()) / 'resources' / 'Presentations'
+            for f in srcdir.files('*.cpxo'):
+                store.append([f.name, "", f.getctime()])
+        else:
+            print 'error in src', src
         print 'return cpxo store'
         return store
 
@@ -85,20 +95,19 @@ class Cpxoview(gtk.VBox):
         description = model[row][1]
         timestamp = model[row][2]
         print 'search for', title, description, timestamp
-        if int(timestamp) > 0:
+        if len(str(timestamp)) > 1:
             ds_objects, num_objects = datastore.find({'title':[title], 'timestamp':[timestamp]})
         else:
             ds_objects, num_objects = datastore.find({'title':[title], 'description': [description]})
         if num_objects > 0:
             object = ds_objects[0]
         else:
-            print 'datastore find failed', f
+            print 'datastore find failed', num_objects, str(timestamp)
+            return
         fn = object.file_path
         print 'object filename', path(fn).exists(), fn
         #open slideshow, set Navigation toolbar current
         self.activity.read_file(fn)
         for object in ds_objects:
             object.destroy()
-        self.activity.set_screen(2)
-
-
+        self.activity.set_screen(0)

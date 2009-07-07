@@ -57,7 +57,7 @@ class Listview(gtk.VBox):
         print 'set_store', mountpoint, pth
         store = gtk.ListStore(str, str, str)
         #get objects from the local datastore 
-        ds_objects, num_objects = datastore.find({'mountpoints':[mountpoint], 'mime_type':['image/jpg', 'image/png', 'image/svg']})
+        ds_objects, num_objects = datastore.find({'mountpoints':[mountpoint], 'mime_type':['image/jpg', 'image/png', 'image/svg', 'image/jpeg']})
         for f in ds_objects:
             try:
                 title = f.metadata['title']
@@ -72,6 +72,7 @@ class Listview(gtk.VBox):
             except:
                 timestamp = "0"
             store.append([title, mime_type, timestamp])
+            print 'store.append', title, mime_type, timestamp
             f.destroy()
         return store
 

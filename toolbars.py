@@ -28,7 +28,8 @@ import gobject
 import pango
 import logging
 import threading
-import os, sys, time
+import os, sys
+from time import strftime
 import utils
 from path import path
 import slideshow
@@ -383,10 +384,10 @@ class InkToolBar(gtk.Toolbar):
                 self.__submit.set_sensitive(True)
 
 class MakeToolBar(gtk.Toolbar):
-    
-    def __init__(self, activity, deck):
+
+    def __init__(self, this_activity, deck):
         gtk.Toolbar.__init__(self)
-        self.activity = activity
+        self.activity = this_activity
         self.deck = deck
 
         #get mount points
@@ -400,13 +401,13 @@ class MakeToolBar(gtk.Toolbar):
                 pendrive = i
      
         
-        self.__newbtn = ToolButton('new-slideshow')
+        self.__newbtn = ToolButton('new-transparency')
         self.__newbtn.set_tooltip("New slideshow")
         self.__newbtn.connect('clicked', self.new)
         self.insert(self.__newbtn, -1)
         self.__newbtn.show()
 
-        self.__openbtn = ToolButton('slideshow')
+        self.__openbtn = ToolButton('transparency')
         self.__openbtn.set_tooltip("Choose slideshow")
         self.__openbtn.connect('clicked', self.open)
         self.insert(self.__openbtn, -1)
@@ -436,9 +437,15 @@ class MakeToolBar(gtk.Toolbar):
         self.__decktitle_item = gtk.ToolItem()
 
         self.__decktitle = gtk.Entry()
-        self.__decktitle.set_text(self.deck.get_title(1))
+        try:
+            title = self.deck.get_title()
+        except:
+            title = ""
+        print 'self.__decktitle.set_text', title
+        self.__decktitle.set_text(title)
         self.__decktitle.set_alignment(0)
         self.__decktitle.connect('activate', self.decktitle_change_cb)
+        #self.deck.connect('decktitle_changed', self.decktitle_change_cb)
 
         self.__decktitle.set_width_chars(20)
 
@@ -465,17 +472,35 @@ class MakeToolBar(gtk.Toolbar):
         self.insert(self.__slidetitle_item, -1)
         self.__slidetitle_item.show()
 
+        # separator between presentation buttons and help button
+        separator = gtk.SeparatorToolItem()
+        separator.set_draw(False)
+        separator.set_expand(True)
+        self.insert(separator, -1)
+        separator.show()
+
+        self.__helpbtn = ToolButton('help-button')
+        self.__helpbtn.set_tooltip("Select help presentation")
+        self.__helpbtn.connect('clicked', self.help)
+        self.insert(self.__helpbtn, -1)
+        self.__helpbtn.show()
+
+        self.__reloadbtn = ToolButton()
+        self.__reloadbtn.set_icon_name('green-button')
+        self.__reloadbtn.connect('clicked', self.reload)
+        self.insert(self.__reloadbtn, -1)
+        self.__reloadbtn.show()
+
         self.show()
 
     def decktitle_change_cb(self, widget):
-        self.deck.set_title(self.__decktitle.get_text(3))
-        print 'decktitle change', self.__decktitle.get_text(), self.deck.get_title()
+        self.deck.set_title(self.__decktitle.get_text())
 
     def slidetitle_change_cb(self, widget):
-        self.deck.set_slideTitle(self.__slidetitle.get_text())
+        self.deck.set_SlideTitle(self.__slidetitle.get_text())
 
     def slidetitle_changed_cb(self, widget):
-        self.__slidetitle.set_text(self.deck.get_slideTitle())
+        self.__slidetitle.set_text(self.deck.get_SlideTitle())
 
     def new(self, widget):
         print 'New slideshow'
@@ -489,18 +514,22 @@ class MakeToolBar(gtk.Toolbar):
         scrn3 = self.activity.set_screen(2)
         treeview = scrn3.get_treeView()
         print 'set_cpxo_store'
-        treeview.set_model(scrn3.set_store())
+        treeview.set_model(scrn3.set_store("datastore"))
         print 'slideshow treeview model set'
 
+    def help(self, widget):
+        scrn3 = self.activity.set_screen(2)
+        #here select help.cpxo in resources
+        fn = path(activity.get_bundle_path()) / 'resources' / 'help.cpxo'
+        self.activity.read_file(fn)
+
     def chooseimage(self, widget, source, pth):
-        print 'chooseimage', source, pth
         scrn2 = self.activity.set_screen(1)
-        time.sleep(30)
-        print 'sleep over'
         treeview = scrn2.get_treeView()
-        print 'set_store', source, pth
         treeview.set_model(scrn2.set_store(source, pth))
-        print 'treeview model set'
+
+    def reload(self, widget):
+        self.deck.reload()
 
     def showhtml(self, widget):
         self.activity.set_screen(4)

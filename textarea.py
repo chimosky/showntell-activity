@@ -44,8 +44,6 @@ class TextArea(gtk.HBox):
             self.__deck = deck
             self.__text_area = gtk.Entry()
             self.render_text_area()
-            self.__record=False
-            self.__play=False
             self.__deck.connect('slide-redraw', self.update_text)
             self.__text_area.connect('changed', self.text_changed)
             self.__logger.debug("Constructed")
@@ -71,6 +69,12 @@ class TextArea(gtk.HBox):
             self.__source = source
             self.__fileout = fileout
             """        
+
+            #initialize convert pipeline
+            p = "filesrc location=/tmp/temp.wav ! wavparse "
+            p = p + "! audioconvert ! vorbisenc ! oggmux "
+            p = p + "! filesink location="
+            self.__pipeline = p
 
         def update_text(self, widget):
             selfink, text = self.__deck.getSelfInkOrSubmission()
@@ -99,58 +103,44 @@ class TextArea(gtk.HBox):
             self.__text_area.set_text("")
                 
         # Start Recording
-        def record(self, params):
-            if self.__record:
+        def record(self, button):
+            if not button.get_active():
                 #we are recording, stop and save clip
                 subprocess.call("killall -q arecord", shell=True)
-                #convert to ogg file
-                pipeline = "filesrc location=/tmp/temp.wav ! wavparse ! audioconvert ! vorbisenc ! oggmux ! filesink location=" + self.__audiofile
-                print 'pipeline', pipeline
-                subprocess.call("gst-launch-0.10 " + pipeline, shell=True)
-                #self.__player.set_state(gst.STATE_PLAYING)
-                #time.sleep(10)
-                #self.__player.set_state(gst.STATE_NULL)
-                self.__record = False
-                self.__deck.setSlideClip(self.__audiofile, n = self.__deck.getIndex())
-                self.__deck.save()
-                self.__deck.reload()
-                #reset mic boost (xo)
-                subprocess.call("amixer cset numid=11 off", shell = True)
-                print 'recording stopped'
-            else:
-                self.__record = True
-                #what is name of clip? If it exists, rm it
-                self.__audiofile = self.__deck.getSlideClip()
+                n = self.__deck.getIndex()
+                self.__audiofile = self.__deck.getSlideClip(n)
                 if path(self.__audiofile).exists():
                     subprocess.call("rm -rf " + str(self.__audiofile), shell=True)
-                else:
-                    self.__audiofile = path(self.__deck.getDeckPath()) / 'slide' +  str(self.__deck.getIndex()) + '.ogg'
+                #convert to ogg file
+                pipeline = self.__pipeline + self.__audiofile
+                subprocess.call("gst-launch-0.10 " + pipeline, shell=True)
+                subprocess.call("amixer cset numid=11 off", shell = True)
+                #reset mic boost
+                print 'mic boost off', n, self.__audiofile, path(self.__audiofile).exists()
+            else:
                 #turn on mic boost (xo)
                 print 'turn on mic boost'
                 subprocess.call("amixer cset numid=11 on", shell=True)
-                print 'record clip:', self.__audiofile
                 #self.__fileout.set_property("location", self.__audiofile)
                 #self.__source.set_property("location", "/tmp/temp.wav")
                 #self.__player.set_state(gst.STATE_PLAYING)
                 print 'recording started'
-                subprocess.call("arecord -f cd -d 10 /tmp/temp.wav", shell=True)
+                self.__pid=subprocess.Popen("arecord -f cd /tmp/temp.wav", shell=True)
 
         # Play Audio Clip
-        def play(self, params):
-            if self.__play:
-                #we are playing and need to stop
-                subprocess.call("killall -q gst-launch-0.10", shell=True)
-                self.__play = False
-            else:
+        def play(self, button):
+            if button.get_active():
                 #play clip
-                self.__deck.save()
                 clip = self.__deck.getSlideClip()
-                #clip = "/home/olpc/Activities/ShowNTell.activity/resources/test.ogg"
                 print 'play clip:', clip
                 if clip:
-                    self.__play = True
-                    subprocess.call("gst-launch-0.10 filesrc location=" + clip + " ! decodebin ! audioconvert ! alsasink", shell = True)
-                    self.__play = False
+                    cmd = "gst-launch-0.10 filesrc location=" + clip
+                    cmd = cmd  + " ! decodebin ! audioconvert ! alsasink"
+                    self.__pid = subprocess.Popen(cmd, shell=True)
+            else:
+                #we are playing and need to stop
+                subprocess.call("killall -q gst-launch-0.10", shell=True)
+
 
         # Create buttons for audio controls
         def create_bbox(self, title=None, spacing=0, layout=gtk.BUTTONBOX_SPREAD):
@@ -160,11 +150,13 @@ class TextArea(gtk.HBox):
             bbox.set_layout(layout)
             bbox.set_spacing(spacing)
 
-            button = gtk.Button(stock='gtk-media-record')
+            button = gtk.ToggleButton('gtk-media-record')
+            button.set_use_stock(True)
             button.connect("clicked", self.record)
             bbox.pack_start(button, False, False, 0)
 
-            button = gtk.Button(stock='gtk-media-play')
+            button = gtk.ToggleButton('gtk-media-play')
+            button.set_use_stock(True)
             button.connect("clicked", self.play)
             bbox.pack_start(button, False, False, 0)
 

@@ -20,19 +20,21 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-
-import os
+import os, sys, subprocess
+from time import strftime
 import gtk
 import xml.dom.minidom
 import gobject
 import logging
 from path import path
 from sugar.activity import activity
+from sugar.datastore import datastore
 
 class Deck(gobject.GObject):
-    
+
     __gsignals__ = {
         'slide-changed' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
+        'decktitle-changed' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
         'slide-redraw' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
         'remove-path' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_INT,)),
         'deck-changed' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
@@ -41,30 +43,45 @@ class Deck(gobject.GObject):
         'instr-state-propagate' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_BOOLEAN,)),
         'lock-state-propagate' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_BOOLEAN,)),
         'ink-submitted' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_STRING, gobject.TYPE_STRING)),
-        'ink-broadcast' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, 
+        'ink-broadcast' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
                             (gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING)),
         'update-submissions' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_INT,)),
         'instructor-ink-cleared' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_INT,)),
         'instructor-ink-removed' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_INT, gobject.TYPE_INT)),
     }
-    
-    def __init__(self, slidename, base="/nfs/show"):
+
+    def __init__(self, sugaractivity, handle, rsrc, base="/nfs/show"):
         gobject.GObject.__init__(self)
+        self.__handle = handle
+        if self.__handle.object_id == None:
+            print 'slideshow - from home view'
+        else:
+            obj = datastore.get(self.__handle.object_id)
+            print 'object:', obj.get_file_path()
         self.__logger = logging.getLogger('Deck')
         self.__base = base
+        self.__rsrc = rsrc
+        self.__activity = sugaractivity
 
         self.__is_initiating = True
         self.__nav_locked = False
         self.__active_sub = -1
         self.__self_text = ""
         self.__text_tag = None
-        self.__title_slide_name = slidename
-        
-        # Compute the path to the deck.xml file and read it if it exists;
-        # otherwise we'll create a new XML Document
         self.__xmlpath = os.path.join(base, "deck.xml")
+        #we always create a new presentation and copy over it on resume
+        if path(base).exists():
+            #we can't have permissions.info for this to work
+            subprocess.call("cp -r " + base + " /home/olpc/save", shell=True)
+            subprocess.call("rm -rf " + base + '/*', shell=True)
+        else:
+            path.mkdir(base)
+        path.copy(self.__rsrc / 'deck.xml', base / 'deck.xml')
+        path.copy(self.__rsrc / 'title.html', base / 'title.html')
+        path.copy(self.__rsrc / 'title_thumb.png', base / 'title_thumb.png')
         self.reload()
-        
+        self.set_title('New')
+
     def set_locked_mode(self, locked):
         """ Setter method for the navigation lock flag"""
         self.__logger.debug("Lock state: " +str(locked))
@@ -76,61 +93,70 @@ class Deck(gobject.GObject):
         self.__logger.debug("Instructor state: " +str(is_init))
         self.__is_initiating = is_init
         self.emit('instr-state-propagate', is_init)
-    
+
     def getIsInitiating(self):
         return self.__is_initiating
 
-    def set_title(self, title):
-        self.__title = title
+    def make_title_slide(self, title):
+        #open and read title.html
+        self.__work_path = os.path.join(activity.get_activity_root(), 'instance')
+        deckpath = path(activity.get_activity_root()) / 'instance' / 'deck'
+        slide = open(deckpath / 'title.html', 'r')
+        txt = slide.read()
+        slide.close()
+        #here change title.html - change between <h1> and </h1>
+        h1pos = txt.find('<h1>')
+        h1end = txt.find('</h1>')
+        txtmod = txt[:h1pos+4] + title + txt[h1end:]
+        #here change date       - change between <h3> and </h3>
+        h3pos = txtmod.find('<h3>')
+        h3end = txtmod.find('</h3>')
+        txt = txtmod[:h3pos+4] + strftime("%a, %b %d, %Y %H:%M") + txtmod[h3end:]
+        #save title.html and close
+        slide = open(deckpath / 'title.html', 'w')
+        slide.write(txt)
+        slide.close()
+        print 'title slide changed', title
 
-    def get_title(self, id):
-        print 'get_title', id, self.__title
-        if len(self.__title) > 0:
-            return self.__title
-        else:
-            return "no title"
+    def set_title(self, title):
+        nodes = self.__dom.getElementsByTagName("title")
+        nodes[0].firstChild.data = title
+        self.make_title_slide(title)
+        self.save()
+        self.goToIndex(0, is_local=False)
+        self.emit('deck-changed')
+        print 'set_title', self.get_title()
+
+    def get_title(self):
+        nodes = self.__dom.getElementsByTagName("title")
+        return nodes[0].firstChild.data
 
     def reload(self):
         self.__logger.debug("Reading deck")
+        print 'reload:', self.__xmlpath
         if os.path.exists(self.__xmlpath):
             self.__dom = xml.dom.minidom.parse(self.__xmlpath)
-        else:
-            self.__dom = xml.dom.minidom.Document()
-
-        # Look for the root deck element; create it if it's not there
         decks = self.__dom.getElementsByTagName("deck")
-        if len(decks) > 0:
-            self.__deck = decks[0]
-            nodes = self.__dom.getElementsByTagName("title")
-            if len(nodes) > 0:
-                self.__title = nodes[0].firstChild.data
-            else:
-                print 'no deck title', self.__dom.toprettyxml()
-        else:
-            self.__deck = self.__dom.createElement("deck")
-            self.__dom.appendChild(self.__deck)
-            self.__title = 'new'
-            title = self.__dom.createElement("title")
-            title.appendChild(self.__dom.createTextNode(self.__title))
-            self.__deck.appendChild(title)
-            splash = self.__dom.createElement("slide")
-            layer = self.__dom.createElement("layer")
-            layer.appendChild(self.__dom.createTextNode(self.__title_slide_name))
-            splash.appendChild(layer)
-            self.__deck.appendChild(splash)
-        print "Deck.__title=", self.__title
-
+        self.__deck = decks[0]
         # Get the slides from the show
         self.__slides = self.__deck.getElementsByTagName("slide")
         self.__nslides = len(self.__slides)
         self.__logger.debug(str(self.__nslides) + " slides in show")
         self.goToIndex(0, is_local=False)
-        self.emit("deck-changed")
-    
+        print 'deck reloaded'
+
     def save(self, path=None):
         """Writes the XML DOM in memory out to disk"""
+        print 'save:', path
         if not path:
             path = self.__xmlpath
+
+        """
+        print '***************save************************'
+        print self.__dom.toprettyxml()
+        print '***************save************************'
+        """
+
         outfile = open(path, "w")
         self.__dom.writexml(outfile)
         outfile.close()
@@ -144,8 +170,11 @@ class Deck(gobject.GObject):
         for slide in slides:
             deck.appendChild(slide)
         dom.appendChild(deck)
+        print '*************rebuild**************************'
+        print dom.toprettyxml()
+        print '**********************************************'
         return dom
-    
+
     def getDeckPath(self):
         """Returns the path to the folder that stores this slide deck"""
         return self.__base
@@ -199,9 +228,11 @@ class Deck(gobject.GObject):
         newlayer.appendChild(txt)
         newslide.appendChild(newlayer)
         self.__deck.appendChild(newslide)
-        print 'added slide', self.__dom.toxml()
+        print '**************addSlide*************'
+        print self.__dom.toprettyxml()
+        print '***********************************'
         self.save()
-    
+
     def removeSlide(self, n):
         del self.__slides[n]
         self.__dom = self.rebuild_dom("modified deck", self.__slides)
@@ -226,7 +257,7 @@ class Deck(gobject.GObject):
             p = os.path.join(self.__base, l.firstChild.nodeValue)
             layers.append(p)
         return layers
-    
+
     def getInstructorInk(self):
         self.__instructor_ink = []
         instr = self.__slide.getElementsByTagName("instructor")
@@ -236,7 +267,7 @@ class Deck(gobject.GObject):
             for pathstr in pathtags:
                 self.__instructor_ink.append(pathstr.firstChild.nodeValue)
         return self.__instructor_ink
-        
+
     def getSelfInkOrSubmission(self):
         if self.__active_sub == -1:
             return (self.__self_ink, self.__self_text)
@@ -255,14 +286,14 @@ class Deck(gobject.GObject):
                     pathlist.append(path.firstChild.nodeValue)
             return (pathlist, text)
         return None
-    
+
     def setActiveSubmission(self, sub):
         self.__active_sub = sub
         self.emit('slide-redraw')
-    
+
     def getActiveSubmission(self):
         return self.__active_sub
-    
+
     def getSubmissionList(self, n=None):
         if n is None:
             n = self.__pos
@@ -271,7 +302,7 @@ class Deck(gobject.GObject):
         for subtag in subtags:
             sublist.append(subtag.getAttribute("from"))
         return sublist
-    
+
     def addSubmission(self, whofrom, inks, text="", n=None):
         if n is None:
             n = self.__pos
@@ -298,7 +329,7 @@ class Deck(gobject.GObject):
         subs = slide.getElementsByTagName("submission")
         if n == self.__pos:
             self.emit('update-submissions', len(subs) - 1)
-    
+
     def addInkToSlide(self, pathstr, islocal, n=None):
         """Adds ink to the current slide, or slide n if given.  Instructor ink may be added to any slide;
         but it only makes sense to add student ink to the current slide (n will be ignored)"""
@@ -338,7 +369,7 @@ class Deck(gobject.GObject):
         else:
             if n is None or n == self.__pos:
                 self.emit("remote-ink-added", pathstr)
-    
+
     def clearInk(self, n=None):
         if n is None:
             n = self.__pos
@@ -351,7 +382,7 @@ class Deck(gobject.GObject):
             slide.removeChild(self_tag)
         self.__self_ink = []
         self.__self_ink_tag = None
-    
+
     def clearInstructorInk(self, n=None):
         if n is None:
             n = self.__pos
@@ -363,7 +394,7 @@ class Deck(gobject.GObject):
             self.__instructor_ink = []
             self.__instructor_tag = None
             self.emit('slide-redraw')
-    
+
     def removeInstructorPathByUID(self, uid, n=None):
         if n is None:
             n = self.__pos
@@ -380,7 +411,7 @@ class Deck(gobject.GObject):
                 pathstr = path_tag.firstChild.nodeValue
                 path_uid = 0
                 try:
-                    path_uid = int(pathstr[0:pathstr.find(';')]) 
+                    path_uid = int(pathstr[0:pathstr.find(';')])
                 except Exception, e:
                     pass
                 if path_uid == uid:
@@ -388,7 +419,7 @@ class Deck(gobject.GObject):
                     needs_redraw = True
         if n == self.__pos and needs_redraw:
             self.emit('remove-path', uid)
-    
+
     def removeLocalPathByUID(self, uid, n=None):
         if n is None:
             n = self.__pos
@@ -408,21 +439,21 @@ class Deck(gobject.GObject):
                 pathstr = path_tag.firstChild.nodeValue
                 path_uid = 0
                 try:
-                    path_uid = int(pathstr[0:pathstr.find(';')]) 
+                    path_uid = int(pathstr[0:pathstr.find(';')])
                 except Exception, e:
                     pass
                 if path_uid == uid:
                     tag.removeChild(path_tag)
-                        
+
     def doSubmit(self):
         inks, text, whofrom = self.getSerializedInkSubmission()
         self.__logger.debug("Submitting ink: " + str(inks) + " text: " + text)
         self.emit('ink-submitted', inks, text)
-        
+
     def doBroadcast(self):
         inks, text, whofrom = self.getSerializedInkSubmission()
         self.emit('ink-broadcast', whofrom, inks, text)
-    
+
     def getSerializedInkSubmission(self):
         sub = ""
         text = ""
@@ -454,17 +485,18 @@ class Deck(gobject.GObject):
                     if path.firstChild:
                         sub = sub + path.firstChild.nodeValue + "$"
             return sub, text, whofrom
-    
+
     def getSlideThumb(self, n=-1):
         """Returns the full path to the thumbnail for this slide if it is defined; otherwise False"""
         if n == -1:
             n = self.__pos
         slide = self.__slides[n]
+        print slide.toprettyxml()
         thumbs = slide.getElementsByTagName("thumb")
         if len(thumbs) < 1:
             return False
         return os.path.join(self.__base, thumbs[0].firstChild.nodeValue)
-    
+
     def setSlideThumb(self, filename, n=-1):
         """Sets the thumbnail for this slide to filename (provide a *relative* path!)"""
         if n == -1:
@@ -476,7 +508,7 @@ class Deck(gobject.GObject):
         thumb = self.__dom.createElement("thumb")
         thumb.appendChild(self.__dom.createTextNode(filename))
         slide.appendChild(thumb)
-    
+
     def getSlideClip(self, n=-1):
         """Returns the full path to the audio clip for this slide if it is defined; otherwise False"""
         if n == -1:
@@ -486,7 +518,7 @@ class Deck(gobject.GObject):
         if len(clip) < 1:
             return False
         return os.path.join(self.__base, clip[0].firstChild.nodeValue)
-    
+
     def setSlideClip(self, filename, n=-1):
         """Sets the clip for this slide to filename (provide a *relative* path!)"""
         if n == -1:
@@ -495,10 +527,10 @@ class Deck(gobject.GObject):
         clips = slide.getElementsByTagName("clip")
         for clip in clips:
             slide.removeChild(clip)
-        thumb = self.__dom.createElement("clip")
-        thumb.appendChild(self.__dom.createTextNode(filename))
-        slide.appendChild(thumb)
-        
+        clip = self.__dom.createElement("clip")
+        clip.appendChild(self.__dom.createTextNode(filename))
+        slide.appendChild(clip)
+
     def setSlideText(self, textval):
         self.__self_text = textval
         if self.__text_tag:
@@ -506,10 +538,13 @@ class Deck(gobject.GObject):
                 self.__text_tag.firstChild.nodeValue = textval
             else:
                 self.__text_tag.appendChild(self.__dom.createTextNode(textval))
-            
+
     def doNewIndex(self):
         """Updates any necessary state associated with moving to a new slide"""
         self.__slide = self.__slides[self.__pos]
+        #set slide title - entry text from xml
+        self.set_SlideTitle(self.__slide.getAttribute('title'))
+
         self_ink = self.__slide.getElementsByTagName("self")
         self.__instructor_tag = None
         self.__self_ink_tag = None
@@ -538,11 +573,12 @@ class Deck(gobject.GObject):
             self.__self_ink_tag.appendChild(self.__text_tag)
         if self.__text_tag.firstChild:
             self.__self_text = self.__text_tag.firstChild.nodeValue
-            
+        self.__activity.set_screen(0)
+
         self.emit("slide-changed")
         self.emit("update-submissions", self.__active_sub)
         self.emit("slide-redraw")
-        
+
     def goToIndex(self, index, is_local):
         """Jumps to the slide at the given index, if it's valid"""
         self.__logger.debug("Trying to change slides: locked? %u, instructor? %u, is_local? %u",
@@ -557,39 +593,39 @@ class Deck(gobject.GObject):
         else:
             self.__pos = index
             print 'invalid index', index
-    
+
     def getIndex(self):
         """Returns the index of the current slide"""
         return self.__pos
-    
+
     def next(self):
         """Moves to the next slide"""
         self.goToIndex(self.__pos + 1, is_local=True)
-    
+
     def previous(self):
         """Moves to the previous slide"""
         self.goToIndex(self.__pos - 1, is_local=True)
-        
+
     def isAtBeginning(self):
         """Returns true if show is on the first slide in the deck"""
         if self.__nslides < 1:
             return True
-            
+
         if self.__pos == 0:
             return True
         else:
             return False
-    
+
     def isAtEnd(self):
         """Returns true if the show is at the last slide in the deck"""
         if self.__nslides < 1:
             return True
-            
+
         if self.__pos == self.__nslides - 1:
             return True
         else:
             return False
-    
+
     def getSlideDimensionsFromXML(self, n=-1):
         """Returns the dimensions for the slide at index n, if they're specified"""
         if n == -1:
@@ -600,8 +636,8 @@ class Deck(gobject.GObject):
         if wstring != '' and hstring != '':
             return [float(wstring), float(hstring)]
         return False
-            
+
     def getSlideCount(self):
         return self.__nslides
-            
+
 gobject.type_register(Deck)

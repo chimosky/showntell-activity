@@ -276,6 +276,7 @@ class ThumbViewer(gtk.DrawingArea):
         # Load thumbnail from the PNG file, if it exists; otherwise draw from scratch
         timerstart = time.time()
         thumb = self.__deck.getSlideThumb(n)
+        print 'getSlideThumb', n, thumb
         if thumb and os.path.exists(thumb):
             self.__surface = cairo.ImageSurface.create_from_png(thumb)
         else:

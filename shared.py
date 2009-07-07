@@ -71,6 +71,7 @@ class Shared(ExportedGObject):
         """ Called when the activity is shared """
         self.__logger.debug('The activity has been shared.')
         self.__is_initiating = True
+        print 'shared_cb call write_file', self.__cpxo.path
         self.__activity.write_file(self.__cpxo_path)
         self.__deck.set_is_initiating(is_init=True)
         self.shared_setup()
