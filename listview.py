@@ -13,6 +13,7 @@ import sys, os
 import gtk
 from sugar.datastore import datastore
 from path import path
+from datetime import datetime
 
 
 class Listview(gtk.VBox): 
@@ -47,6 +48,7 @@ class Listview(gtk.VBox):
         treeView.append_column(column)
         rendererText = gtk.CellRendererText()
         column = gtk.TreeViewColumn("Date", rendererText, text=2)
+        column.set_sort_order(gtk.SORT_DESCENDING)
         column.set_sort_column_id(2)
         treeView.append_column(column)
         
@@ -68,9 +70,10 @@ class Listview(gtk.VBox):
             except:
                 mime_type = 'unknown'
             try:
-                timestamp = f.metadata['timestamp']
+                t = f.metadata['timestamp']
+                timestamp = datetime.fromtimestamp(t)
             except:
-                timestamp = "0"
+                timestamp = ""
             store.append([title, mime_type, timestamp])
             print 'store.append', title, mime_type, timestamp
             f.destroy()

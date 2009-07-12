@@ -3,7 +3,7 @@
 # textarea.py
 #
 # Class to show, save, submit text entries
-# 
+#
 # W.Burnside <wburnsid@u.washington.edu>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-
 import os, time
 from path import path
 import pygtk
@@ -35,11 +34,10 @@ import gst
 
 class TextArea(gtk.HBox):
 
-
         # Constructor
         def __init__(self, deck):
             gtk.HBox.__init__(self)
-            
+
             self.__logger = logging.getLogger('TextArea')
             self.__deck = deck
             self.__text_area = gtk.Entry()
@@ -48,7 +46,7 @@ class TextArea(gtk.HBox):
             self.__text_area.connect('changed', self.text_changed)
             self.__logger.debug("Constructed")
 
-            """            
+            """
             #initialize audio record pipeline
             player = gst.Pipeline("player")
             #source = gst.element_factory_make("alsasrc", "alsa-source")
@@ -68,7 +66,7 @@ class TextArea(gtk.HBox):
             self.__player = player
             self.__source = source
             self.__fileout = fileout
-            """        
+            """
 
             #initialize convert pipeline
             p = "filesrc location=/tmp/temp.wav ! wavparse "
@@ -83,25 +81,25 @@ class TextArea(gtk.HBox):
                 self.__text_area.set_sensitive(True)
             else:
                 self.__text_area.set_sensitive(False)
-        
+
         def text_changed(self, entry):
             if self.__deck.getActiveSubmission() == -1:
                 self.__deck.setSlideText(self.__text_area.get_text())
-            
+
         def render_text_area(self, widget=None):
-            
+
             # pack widgets
             self.pack_start(self.create_bbox(title="Audio Controls"), False, False, 0)
             self.pack_start(self.__text_area, True, True, 0)
-            
+
             # show widgets
             self.__text_area.show()
             self.show()
-        
+
         # Clear text in entry box
         def clear_text(self, widget, event):
             self.__text_area.set_text("")
-                
+
         # Start Recording
         def record(self, button):
             if not button.get_active():
@@ -140,7 +138,6 @@ class TextArea(gtk.HBox):
             else:
                 #we are playing and need to stop
                 subprocess.call("killall -q gst-launch-0.10", shell=True)
-
 
         # Create buttons for audio controls
         def create_bbox(self, title=None, spacing=0, layout=gtk.BUTTONBOX_SPREAD):

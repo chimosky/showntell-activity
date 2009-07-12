@@ -107,7 +107,6 @@ class ShowNTell(activity.Activity):
         # Create our toolbars
         makeTB = toolbars.MakeToolBar(self, self.__deck)
         self.__makeTB = makeTB
-        self.__makeTB.decktitle_change_cb(None)
         navTB = toolbars.NavToolBar(self, self.__shared, self.__deck)
         inkTB = toolbars.InkToolBar(self.__slide, self.__deck)
 
@@ -188,10 +187,9 @@ class ShowNTell(activity.Activity):
             f.write(z.read(i.filename))
             f.close()
         z.close()
-        print 'read_file: reload()', len(z.infolist())
         self.__deck.reload()
         print 'read_file: before', self.__deck.get_title(), self.metadata['title']
-        self.__deck.set_title(self.metadata['title'])
+        self.__makeTB.decktitle_set_new(self.metadata['title'])
         print 'read_file: after',  self.__deck.get_title()
         self.__toolbox.set_current_toolbar(NAVIGATION_TOOLBAR)
         newindex = 0

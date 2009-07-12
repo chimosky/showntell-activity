@@ -14,7 +14,7 @@ import gtk
 from sugar.activity import activity
 from sugar.datastore import datastore
 from path import path
-from time import strftime
+from datetime import datetime
 
 class Cpxoview(gtk.VBox):
     def __init__(self, activity, deck):
@@ -48,6 +48,7 @@ class Cpxoview(gtk.VBox):
         treeView.append_column(column)
         rendererText = gtk.CellRendererText()
         column = gtk.TreeViewColumn("Date", rendererText, text=2)
+        column.set_sort_order(gtk.SORT_DESCENDING)
         column.set_sort_column_id(2)
         treeView.append_column(column)
 
@@ -70,11 +71,11 @@ class Cpxoview(gtk.VBox):
                 except:
                     description = ''
                 try:
-                    t = int(f.metadata['timestamp'])
+                    t = f.metadata['timestamp']
+                    timestamp = datetime.fromtimestamp(t)
                 except:
-                    t = "0"
-                #tstamp = strftime("%a, %b, %Y %H %M", t)
-                store.append([title, description, t])
+                    timestamp = ""
+                store.append([title, description, timestamp])
                 f.destroy()
         elif src == "activity":
             #source is activity bundle

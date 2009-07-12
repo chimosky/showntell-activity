@@ -479,22 +479,25 @@ class MakeToolBar(gtk.Toolbar):
         self.insert(separator, -1)
         separator.show()
 
-        self.__helpbtn = ToolButton('help-button')
-        self.__helpbtn.set_tooltip("Select help presentation")
-        self.__helpbtn.connect('clicked', self.help)
-        self.insert(self.__helpbtn, -1)
-        self.__helpbtn.show()
+        #self.__helpbtn = ToolButton('help-button')
+        #self.__helpbtn.set_tooltip("Select help presentation")
+        #self.__helpbtn.connect('clicked', self.help)
+        #self.insert(self.__helpbtn, -1)
+        #self.__helpbtn.show()
 
-        self.__reloadbtn = ToolButton()
-        self.__reloadbtn.set_icon_name('green-button')
-        self.__reloadbtn.connect('clicked', self.reload)
-        self.insert(self.__reloadbtn, -1)
-        self.__reloadbtn.show()
+        #self.__reloadbtn = ToolButton()
+        #self.__reloadbtn.set_icon_name('green-button')
+        #self.__reloadbtn.connect('clicked', self.reload)
+        #self.insert(self.__reloadbtn, -1)
+        #self.__reloadbtn.show()
 
         self.show()
 
     def decktitle_change_cb(self, widget):
         self.deck.set_title(self.__decktitle.get_text())
+
+    def decktitle_set_new(self, title):
+        self.__decktitle.set_text(title)
 
     def slidetitle_change_cb(self, widget):
         self.deck.set_SlideTitle(self.__slidetitle.get_text())
