@@ -39,11 +39,7 @@ class Cpxoview(gtk.VBox):
     def create_columns(self, treeView):
 
         rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Title", rendererText, text=0)
-        column.set_sort_column_id(0)
-        treeView.append_column(column)
-        rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Description", rendererText, text=1)
+        column = gtk.TreeViewColumn("Title", rendererText, text=1)
         column.set_sort_column_id(1)
         treeView.append_column(column)
         rendererText = gtk.CellRendererText()
@@ -63,19 +59,19 @@ class Cpxoview(gtk.VBox):
             ds_objects, num_objects = datastore.find({'mime_type':['application/x-classroompresenter']})
             for f in ds_objects:
                 try:
+                    object = f.object_id
+                except:
+                    print 'find object_id failed'
+                try:
                     title = f.metadata['title']
                 except:
                     title = ""
-                try:
-                    description = f.metadata['description']
-                except:
-                    description = ''
                 try:
                     t = f.metadata['timestamp']
                     timestamp = datetime.fromtimestamp(t)
                 except:
                     timestamp = ""
-                store.append([title, description, timestamp])
+                store.append([object, title, timestamp])
                 f.destroy()
         elif src == "activity":
             #source is activity bundle
@@ -92,19 +88,9 @@ class Cpxoview(gtk.VBox):
         print 'cpxo on_activated'
         model = widget.get_model()
         print 'row', model[row][0], model[row][1], model[row][2]
-        title = model[row][0]
-        description = model[row][1]
+        title = model[row][1]
         timestamp = model[row][2]
-        print 'search for', title, description, timestamp
-        if len(str(timestamp)) > 1:
-            ds_objects, num_objects = datastore.find({'title':[title], 'timestamp':[timestamp]})
-        else:
-            ds_objects, num_objects = datastore.find({'title':[title], 'description': [description]})
-        if num_objects > 0:
-            object = ds_objects[0]
-        else:
-            print 'datastore find failed', num_objects, str(timestamp)
-            return
+        object = datastore.get(model[row][0])
         fn = object.file_path
         print 'object filename', path(fn).exists(), fn
         #open slideshow, set Navigation toolbar current

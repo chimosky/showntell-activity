@@ -1,12 +1,12 @@
 #!/usr/bin/python
 
-# ZetCode PyGTK tutorial 
+# ZetCode PyGTK tutorial
 #
 # This example shows a TreeView widget
 # in a list view mode
 #
 # author: jan bodnar
-# website: zetcode.com 
+# website: zetcode.com
 # last edited: February 2009
 
 import sys, os
@@ -15,8 +15,7 @@ from sugar.datastore import datastore
 from path import path
 from datetime import datetime
 
-
-class Listview(gtk.VBox): 
+class Listview(gtk.VBox):
     def __init__(self, activity, deck):
         print 'listview init'
         self.activity = activity
@@ -37,30 +36,34 @@ class Listview(gtk.VBox):
         self.show_all()
 
     def create_columns(self, treeView):
-    
+
         rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Title", rendererText, text=0)
-        column.set_sort_column_id(0)    
-        treeView.append_column(column)   
-        rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Mime_type", rendererText, text=1)
+        column = gtk.TreeViewColumn("Title", rendererText, text=1)
         column.set_sort_column_id(1)
         treeView.append_column(column)
         rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Date", rendererText, text=2)
-        column.set_sort_order(gtk.SORT_DESCENDING)
+        column = gtk.TreeViewColumn("Mime_type", rendererText, text=2)
         column.set_sort_column_id(2)
         treeView.append_column(column)
-        
+        rendererText = gtk.CellRendererText()
+        column = gtk.TreeViewColumn("Date", rendererText, text=3)
+        column.set_sort_order(gtk.SORT_DESCENDING)
+        column.set_sort_column_id(3)
+        treeView.append_column(column)
+
     def get_treeView(self):
         return self.treeView
 
     def set_store(self, mountpoint, pth):
         print 'set_store', mountpoint, pth
-        store = gtk.ListStore(str, str, str)
-        #get objects from the local datastore 
+        store = gtk.ListStore(str, str, str, str)
+        #get objects from the local datastore
         ds_objects, num_objects = datastore.find({'mountpoints':[mountpoint], 'mime_type':['image/jpg', 'image/png', 'image/svg', 'image/jpeg']})
         for f in ds_objects:
+            try:
+                object = f.object_id
+            except:
+                print 'set object_id failed'
             try:
                 title = f.metadata['title']
             except:
@@ -74,33 +77,23 @@ class Listview(gtk.VBox):
                 timestamp = datetime.fromtimestamp(t)
             except:
                 timestamp = ""
-            store.append([title, mime_type, timestamp])
-            print 'store.append', title, mime_type, timestamp
+            store.append([object, title, mime_type, timestamp])
+            print 'store.append', object, title, mime_type, timestamp
             f.destroy()
         return store
 
     def on_activated(self, widget, row, col):
-        
+
         model = widget.get_model()
-        print 'row', model[row][0], model[row][1], model[row][2]
-        title = model[row][0]
-        mime_type = model[row][1]
-        timestamp = model[row][2]
-        print 'search for', title, mime_type, timestamp
-        if int(timestamp) > 0:
-            ds_objects, num_objects = datastore.find({'title':[title], 'timestamp':[timestamp]})
-        else:
-            ds_objects, num_objects = datastore.find({'title':[title], 'mime_type': [mime_type]})
-        if num_objects > 0:
-            object = ds_objects[0]
-        else:
-            print 'datastore find failed', f
+        print 'row', model[row][0], model[row][1], model[row][2], model[row][3]
+        title = model[row][1]
+        mime_type = model[row][2]
+        timestamp = model[row][3]
+        object = datastore.get(model[row][0])
         fn = object.file_path
         print 'object filename', path(fn).exists(), fn
-        self.deck.addSlide(fn)  
+        self.deck.addSlide(fn)
         self.deck.reload()
         for object in ds_objects:
             object.destroy()
         self.activity.set_screen(0)
-
-

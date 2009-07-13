@@ -401,13 +401,13 @@ class MakeToolBar(gtk.Toolbar):
                 pendrive = i
      
         
-        self.__newbtn = ToolButton('new-transparency')
-        self.__newbtn.set_tooltip("New slideshow")
-        self.__newbtn.connect('clicked', self.new)
-        self.insert(self.__newbtn, -1)
-        self.__newbtn.show()
+        #self.__newbtn = ToolButton('new-transparency')
+        #self.__newbtn.set_tooltip("New slideshow")
+        #self.__newbtn.connect('clicked', self.new)
+        #self.insert(self.__newbtn, -1)
+        #self.__newbtn.show()
 
-        self.__openbtn = ToolButton('transparency')
+        self.__openbtn = ToolButton('showntell-activity')
         self.__openbtn.set_tooltip("Choose slideshow")
         self.__openbtn.connect('clicked', self.open)
         self.insert(self.__openbtn, -1)
