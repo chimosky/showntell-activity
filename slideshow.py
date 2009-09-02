@@ -143,6 +143,7 @@ class Deck(gobject.GObject):
         self.__nslides = len(self.__slides)
         self.__logger.debug(str(self.__nslides) + " slides in show")
         self.goToIndex(0, is_local=False)
+        self.emit('deck-changed')
         print 'deck reloaded'
 
     def save(self, path=None):

@@ -94,6 +94,5 @@ class Listview(gtk.VBox):
         print 'object filename', path(fn).exists(), fn
         self.deck.addSlide(fn)
         self.deck.reload()
-        for object in ds_objects:
-            object.destroy()
+        object.destroy()
         self.activity.set_screen(0)

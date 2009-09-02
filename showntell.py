@@ -89,7 +89,7 @@ class ShowNTell(activity.Activity):
         # Set up Main Viewer box
         self.__main_view_box = gtk.VBox()
         self.__slide = slideviewer.SlideViewer(self.__deck, self.__renderer)
-        self.__text_area = textarea.TextArea(self.__deck)
+        self.__text_area = textarea.TextArea(self.__deck, self.__work_path)
         self.__image_chooser = listview.Listview(self, self.__deck)
         self.__slideshow_chooser = cpxoview.Cpxoview(self, self.__deck)
         self.__html_slide = gtk.EventBox()

@@ -32,14 +32,17 @@ import pygst
 pygst.require("0.10")
 import gst
 
+AUDIOPATH = path(activity.get_activity_root()) / 'data' / 'temp.wav'
+
 class TextArea(gtk.HBox):
 
         # Constructor
-        def __init__(self, deck):
+        def __init__(self, deck, work_path):
             gtk.HBox.__init__(self)
 
             self.__logger = logging.getLogger('TextArea')
             self.__deck = deck
+            self.__work_path = work_path
             self.__text_area = gtk.Entry()
             self.render_text_area()
             self.__deck.connect('slide-redraw', self.update_text)
@@ -69,7 +72,7 @@ class TextArea(gtk.HBox):
             """
 
             #initialize convert pipeline
-            p = "filesrc location=/tmp/temp.wav ! wavparse "
+            p = "filesrc location=" + AUDIOPATH + " ! wavparse "
             p = p + "! audioconvert ! vorbisenc ! oggmux "
             p = p + "! filesink location="
             self.__pipeline = p
@@ -107,10 +110,15 @@ class TextArea(gtk.HBox):
                 subprocess.call("killall -q arecord", shell=True)
                 n = self.__deck.getIndex()
                 self.__audiofile = self.__deck.getSlideClip(n)
-                if path(self.__audiofile).exists():
-                    subprocess.call("rm -rf " + str(self.__audiofile), shell=True)
+                if self.__audiofile == False:
+                    self.__audiofile = self.__deck.get_SlideTitle() + '.ogg'
+                audiofile = self.__work_path / 'deck' / self.__audiofile
+                print 'audiofile', n, audiofile
+                if audiofile.exists():
+                    subprocess.call("rm -rf " + str(audiofile), shell=True)
+                self.__deck.setSlideClip(audiofile.name, n)
                 #convert to ogg file
-                pipeline = self.__pipeline + self.__audiofile
+                pipeline = self.__pipeline + audiofile
                 subprocess.call("gst-launch-0.10 " + pipeline, shell=True)
                 subprocess.call("amixer cset numid=11 off", shell = True)
                 #reset mic boost
@@ -120,10 +128,10 @@ class TextArea(gtk.HBox):
                 print 'turn on mic boost'
                 subprocess.call("amixer cset numid=11 on", shell=True)
                 #self.__fileout.set_property("location", self.__audiofile)
-                #self.__source.set_property("location", "/tmp/temp.wav")
+                #self.__source.set_property("location", AUDIOPATH)
                 #self.__player.set_state(gst.STATE_PLAYING)
                 print 'recording started'
-                self.__pid=subprocess.Popen("arecord -f cd /tmp/temp.wav", shell=True)
+                self.__pid=subprocess.Popen("arecord -f cd " + AUDIOPATH, shell=True)
 
         # Play Audio Clip
         def play(self, button):
