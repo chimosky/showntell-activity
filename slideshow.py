@@ -182,6 +182,7 @@ class Deck(gobject.GObject):
 
     def resizeImage(self, inpath, outpath, w, h):
         # resize an image
+        print 'resizeImage', inpath, outpath, w, h
         pixbuf = gtk.gdk.pixbuf_new_from_file_at_size(inpath, w, h)
         #scaled_buf = pixbuf.scale.simple(w, h, gtk.gdk.INTERP_BILINEAR)
         pixbuf.save(outpath, "png")

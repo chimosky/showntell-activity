@@ -392,14 +392,11 @@ class MakeToolBar(gtk.Toolbar):
 
         #get mount points
         ds_mounts = datastore.mounts()
-        pendrive = -1
-        for i in range(0, len(ds_mounts), 1):
-            print 'mount', i, ds_mounts[i]['uri'], ds_mounts[i]['title'], ds_mounts[i]['id']
-            if ds_mounts[i]['uri'].find('datastore') > 0:
-                journal = i
-            else:
-                pendrive = i
-     
+        journal = 0
+        if len(ds_mounts) > 1:
+            pendrive = 1
+        else:
+            pendrive = -1
         
         #self.__newbtn = ToolButton('new-transparency')
         #self.__newbtn.set_tooltip("New slideshow")
@@ -485,11 +482,11 @@ class MakeToolBar(gtk.Toolbar):
         #self.insert(self.__helpbtn, -1)
         #self.__helpbtn.show()
 
-        #self.__reloadbtn = ToolButton()
-        #self.__reloadbtn.set_icon_name('green-button')
-        #self.__reloadbtn.connect('clicked', self.reload)
-        #self.insert(self.__reloadbtn, -1)
-        #self.__reloadbtn.show()
+        self.__reloadbtn = ToolButton()
+        self.__reloadbtn.set_icon_name('green-button')
+        self.__reloadbtn.connect('clicked', self.reload)
+        self.insert(self.__reloadbtn, -1)
+        self.__reloadbtn.show()
 
         self.show()
 
