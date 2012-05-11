@@ -18,7 +18,6 @@ class Htmlview(gtk.VBox):
         gtk.VBox.__init__(self)
         #vbox = gtk.VBox(False, 8)
         wv = WebView()
-        print 'show', WORKFILE, path(WORKFILE).exists()
         wv.load_uri(WORKFILE)
         wv.show()
         self.pack_start(wv, True, True, 0)

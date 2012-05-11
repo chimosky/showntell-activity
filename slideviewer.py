@@ -39,7 +39,7 @@ class SlideViewer(gtk.EventBox):
     def __init__(self, deck, renderer):
         gtk.EventBox.__init__(self)
         self.__logger = logging.getLogger('SlideViewer')
-        self.__logger.setLevel('error')
+        #self.__logger.setLevel('error')
         self.__deck = deck
         self.__canvas = SlideViewerCanvas(deck, renderer)
         self.add(self.__canvas)
@@ -170,14 +170,19 @@ class SlideViewer(gtk.EventBox):
         self.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.PENCIL))
 
 class SlideViewerCanvas(gtk.DrawingArea):
+    """
     __gsignals__ = {'expose_event' : 'override',
                     'configure_event' : 'override',
                     }
+    """
+    __gsignals__ = {'expose_event' : 'override',
+                    }
+
 
     def __init__ (self, deck, renderer):
         gtk.DrawingArea.__init__ (self)
         self.__logger = logging.getLogger('SlideViewerCanvas')
-        self.__logger.setLevel('error')
+        #self.__logger.setLevel('error')
         self.__surface = None
         self.__renderer = renderer
         self.__deck = deck
@@ -221,7 +226,7 @@ class SlideViewerCanvas(gtk.DrawingArea):
         self.__context.stroke()
     
     def do_configure_event(self, event):
-        """Reload the slide when assigned a new height/width"""
+        #Reload the slide when assigned a new height/width
         if self.__renderer:
             self.show_slide()
 
@@ -266,7 +271,7 @@ class ThumbViewer(gtk.DrawingArea):
     def __init__ (self, deck, renderer, n):
         gtk.DrawingArea.__init__ (self)
         self.__logger = logging.getLogger('ThumbViewer')
-        self.__logger.setLevel('error')
+        #self.__logger.setLevel('error')
         self.__deck = deck
         self.__renderer = renderer
         self.__n = n
@@ -276,7 +281,6 @@ class ThumbViewer(gtk.DrawingArea):
         # Load thumbnail from the PNG file, if it exists; otherwise draw from scratch
         timerstart = time.time()
         thumb = self.__deck.getSlideThumb(n)
-        print 'getSlideThumb', n, thumb
         if thumb and os.path.exists(thumb):
             self.__surface = cairo.ImageSurface.create_from_png(thumb)
         else:

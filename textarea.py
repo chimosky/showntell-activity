@@ -111,7 +111,7 @@ class TextArea(gtk.HBox):
                 n = self.__deck.getIndex()
                 self.__audiofile = self.__deck.getSlideClip(n)
                 if self.__audiofile == False:
-                    self.__audiofile = self.__deck.get_SlideTitle() + '.ogg'
+                    self.__audiofile = self.__deck.get_SlideTitle(n) + '.ogg'
                 audiofile = self.__work_path / 'deck' / self.__audiofile
                 print 'audiofile', n, audiofile
                 if audiofile.exists():
@@ -137,7 +137,8 @@ class TextArea(gtk.HBox):
         def play(self, button):
             if button.get_active():
                 #play clip
-                clip = self.__deck.getSlideClip()
+                n = self.__deck.getIndex()
+                clip = self.__deck.getSlideClip(n)
                 print 'play clip:', clip
                 if clip:
                     cmd = "gst-launch-0.10 filesrc location=" + clip

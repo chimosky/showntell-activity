@@ -24,7 +24,6 @@
 
 from sugar.activity import activity
 from sugar.datastore import datastore
-import logging
 
 import sys, os
 import subprocess
@@ -49,36 +48,33 @@ import cpxoview
 
 import hulahop
 from sugar import env
+
 hulahop.startup(os.path.join(env.get_profile_path(), 'gecko'))
 from hulahop.webview import WebView
 
 import xml.dom.minidom
 
-SLIDESHOW_TOOLBAR = 1
-NAVIGATION_TOOLBAR = 2
+NAVIGATION_TOOLBAR = 1
+SLIDESHOW_TOOLBAR = 2
+CREATE_PRESENTATION_TOOLBAR = 3
 
 class ShowNTell(activity.Activity):
 
     def __init__(self, handle):
-        #pdb.set_trace()
         activity.Activity.__init__(self, handle)
-        self.__logger = logging.getLogger('ClassroomPresenter')
-        logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)s %(message)s')
+        self._activity = activity
         self.__screens = []
         # Find our instance path
         self.__work_path = path(self.get_activity_root()) /  'instance'
-        self.__save_path = path(self.get_activity_root()) /  'data'
         self.__deck_dir = self.__work_path /  'deck'
-        bpth = path(activity.get_bundle_path())
-        self.__rsrc_dir = bpth / 'resources'
-        self.__handle = handle
+        subprocess.call('mkdir -p ' + self.__deck_dir,shell=True)
+        #clear out working folder
+        subprocess.call('rm -rf ' + self.__deck_dir +'/*',shell=True)
+
         # Set up the main canvas
         self.__slide_view = gtk.HBox()
-        print 'enter set_canvas', self.__handle.object_id
         self.set_canvas(self.__slide_view)
-
-        self.__deck = slideshow.Deck(self, handle, self.__rsrc_dir, self.__deck_dir)
+        self.__deck = slideshow.Deck(self, self.__deck_dir)
 
         # Set up activity sharing
         self.__shared = shared.Shared(self, self.__deck, self.__work_path)
@@ -92,35 +88,31 @@ class ShowNTell(activity.Activity):
         self.__text_area = textarea.TextArea(self.__deck, self.__work_path)
         self.__image_chooser = listview.Listview(self, self.__deck)
         self.__slideshow_chooser = cpxoview.Cpxoview(self, self.__deck)
-        self.__html_slide = gtk.EventBox()
-        self.__html_slide.set_size_request(600,480)
         self.__main_view_box.pack_start(self.__slide, True, True, 5)
         self.__screens.append(self.__slide)
         self.__main_view_box.pack_start(self.__image_chooser, True, True, 5)
         self.__screens.append(self.__image_chooser)
         self.__main_view_box.pack_start(self.__slideshow_chooser, True, True, 5)
         self.__screens.append(self.__slideshow_chooser)
-        self.__main_view_box.pack_start(self.__html_slide, True, True, 5)
-        self.__screens.append(self.__html_slide)
         self.__main_view_box.pack_start(self.__text_area, False, False, 0)
 
+
         # Create our toolbars
-        makeTB = toolbars.MakeToolBar(self, self.__deck)
-        self.__makeTB = makeTB
-        navTB = toolbars.NavToolBar(self, self.__shared, self.__deck)
-        inkTB = toolbars.InkToolBar(self.__slide, self.__deck)
+        self.navTB = toolbars.NavToolBar(self, self.__shared, self.__deck)
+        self.inkTB = toolbars.InkToolBar(self.__slide, self.__deck)
+        self.makeTB = toolbars.MakeToolBar(self, self.__deck)
 
         # Create the standard activity toolbox; add our toolbars
         toolbox = activity.ActivityToolbox(self)
-        toolbox.add_toolbar("Presentation", makeTB)
-        toolbox.add_toolbar("Navigation",navTB)
-        toolbox.add_toolbar("Ink", inkTB)
+        self.__toolbox = toolbox
+        toolbox.add_toolbar("Navigation",self.navTB)
+        toolbox.add_toolbar("Ink", self.inkTB)
+        toolbox.add_toolbar("Create Presentation", self.makeTB)
         self.set_toolbox(toolbox)
         toolbox.show()
-        self.__toolbox = toolbox
 
-        # Open with slideshow toolbar
-        toolbox.set_current_toolbar(SLIDESHOW_TOOLBAR)
+        # Open with make  toolbar
+        self.__toolbox.set_current_toolbar(CREATE_PRESENTATION_TOOLBAR)
 
         # Set up the side scrollbar widget
         self.__side_bar = sidebar.SideBar(self.__deck, self.__renderer)
@@ -157,17 +149,6 @@ class ShowNTell(activity.Activity):
 
         self.__shared.connect('deck-download-complete', self.dl_complete_cb)
 
-        #if launched by Learn, set up deck
-        pth = path('/tmp/showntell')
-        if pth.exists():
-            #open slideshow, set Navigation toolbar current
-            fin = open(pth,'r')
-            fn = fin.read()
-            fin.close()
-            self.read_file(fn)
-            self.set_screen(0)
-            subprocess.call('rm -rf ' + pth,shell=True)
-
     def dl_complete_cb(self, widget):
         self.do_slideview_mode()
 
@@ -189,31 +170,30 @@ class ShowNTell(activity.Activity):
 
     #resume from journal
     def read_file(self, file_path):
-        self.__logger.debug("read_file " + str(file_path))
-        print 'read_file:', file_path
         ftype = utils.getFileType(file_path)
+        subprocess.call('mkdir -p ' + self.__deck_dir, shell=True)
         z = zipfile.ZipFile(file_path, "r")
         for i in z.infolist():
             f = open(os.path.join(self.__deck_dir, i.filename), "wb")
             f.write(z.read(i.filename))
             f.close()
         z.close()
+        #create dom
         self.__deck.reload()
-        print 'read_file: before', self.__deck.get_title(), self.metadata['title']
-        self.__makeTB.decktitle_set_new(self.metadata['title'])
-        print 'read_file: after',  self.__deck.get_title()
+        #set the title in the nav and make toolbars
+        title = self.__deck.get_title()
+        self.navTB.title.set_text(title)
+        self.makeTB.decktitle.set_text(title)
+        #set current toolbar to Navigation
         self.__toolbox.set_current_toolbar(NAVIGATION_TOOLBAR)
-        newindex = 0
-        if 'current_index' in self.metadata:
-            newindex = int(self.metadata.get('current_index', '0'))
-        self.__deck.goToIndex(newindex, is_local=False)
+        self.__deck.goToIndex(0, is_local=True)
 
     #save state in journal for resume
     def write_file(self, file_path):
-        print 'write_file', self.__toolbox.get_current_toolbar(), str(file_path)
-        self.__logger.debug("write_file " + str(file_path))
-        print 'title', self.__deck.get_title()
-        self.metadata['title'] = self.__deck.get_title()
+        self.metadata['activity']=self.get_bundle_id()
+        title = self.__deck.get_title()
+        self.metadata['title'] = title
+        self.metadata['title_set_by_user']=1
         self.metadata['mime_type'] = "application/x-classroompresenter"
         self.metadata['current_index'] = str(self.__deck.getIndex())
         self.__deck.save()
@@ -227,11 +207,9 @@ class ShowNTell(activity.Activity):
         return self._shared_activity
 
     def set_screen(self,scrn):
-        if len(self.__screens) < 1:
+        if scrn < 0 or scrn >= len(self.__screens):
             return
-        self.__screens[0].hide()
-        self.__screens[1].hide()
-        self.__screens[2].hide()
-        self.__screens[3].hide()
+        for screen in self.__screens:
+            screen.hide()
         self.__screens[scrn].show()
         return self.__screens[scrn]

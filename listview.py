@@ -17,7 +17,6 @@ from datetime import datetime
 
 class Listview(gtk.VBox):
     def __init__(self, activity, deck):
-        print 'listview init'
         self.activity = activity
         gtk.VBox.__init__(self)
         vbox = gtk.VBox(False, 8)
@@ -29,7 +28,10 @@ class Listview(gtk.VBox):
         treeView.connect("row-activated", self.on_activated)
         treeView.set_rules_hint(True)
         sw.add(treeView)
-        self.create_columns(treeView)
+        try:
+            self.create_columns(treeView)
+        except:
+            print 'create_columns failed',sys.exc_info()[:2]
         self.treeView = treeView
         self.deck = deck
         self.add(vbox)
@@ -55,7 +57,6 @@ class Listview(gtk.VBox):
         return self.treeView
 
     def set_store(self, mountpoint, pth):
-        print 'set_store', mountpoint, pth
         store = gtk.ListStore(str, str, str, str)
         #get objects from the local datastore
         ds_objects, num_objects = datastore.find({'mountpoints':[mountpoint], 'mime_type':['image/jpg', 'image/png', 'image/svg', 'image/jpeg']})
@@ -78,20 +79,17 @@ class Listview(gtk.VBox):
             except:
                 timestamp = ""
             store.append([object, title, mime_type, timestamp])
-            print 'store.append', object, title, mime_type, timestamp
             f.destroy()
         return store
 
     def on_activated(self, widget, row, col):
 
         model = widget.get_model()
-        print 'row', model[row][0], model[row][1], model[row][2], model[row][3]
         title = model[row][1]
         mime_type = model[row][2]
         timestamp = model[row][3]
         object = datastore.get(model[row][0])
         fn = object.file_path
-        print 'object filename', path(fn).exists(), fn
         self.deck.addSlide(fn)
         self.deck.reload()
         object.destroy()

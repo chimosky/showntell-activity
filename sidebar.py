@@ -125,6 +125,9 @@ class SideBar(gtk.Notebook):
 		for c in self.__viewing_box.get_children():
 			self.__viewing_box.remove(c)
 
+		if self.__deck.getSlideCount() < 1:
+			return
+
 		# create image table for thumbnails
 		self.image_table = gtk.Table(self.__deck.getSlideCount(), 1, False)
 
@@ -165,7 +168,7 @@ class SideBar(gtk.Notebook):
             self.__deck.save()
             self.__deck.reload()
         else:
-		    self.__deck.goToIndex(n, is_local=True)
+            self.__deck.goToIndex(n, is_local=True)
 
     def moveslide(self, params):
             self.movemode=True
