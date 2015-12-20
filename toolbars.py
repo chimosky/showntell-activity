@@ -46,14 +46,15 @@ from sugar3 import env
 
 DATASTORE = '/home/olpc/.sugar/default/datastore/store'
 
-def get_mounts():    
+def get_mounts():
     volume_monitor = Gio.VolumeMonitor.get()
     
     mounts = []
     for mount in volume_monitor.get_mounts():
         description = {}
-        description['mount_path'] = mount.get_default_location().get_path()
-        description['label'] = mount.get_name()
+        description['uri'] = mount.get_default_location().get_path()
+        description['title'] = mount.get_name()
+        description['id'] = mount.get_uuid()
         mounts.append(description)
         
     return mounts
