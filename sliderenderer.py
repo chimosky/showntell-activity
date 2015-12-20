@@ -20,7 +20,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 import cairo
-import rsvg
 import os
 import utils
 import time
@@ -31,6 +30,7 @@ from sugar3 import env
 
 from gi.repository import Gtk
 from gi.repository import Gdk
+from gi.repository import Rsvg
 from gi.repository import GdkPixbuf
 from gi.repository.WebKit import WebView
 
@@ -62,12 +62,8 @@ class Renderer(object):
         # This may be optimizable to avoid having to open the first layer to get its size,
         # or at least keeping it around to re-use it when the slide is first rendered
         if ftype == "svg":
-            f = open(layers[0], 'rb')
-            svg_data = f.read()
-            f.close()
-            handle = rsvg.Handle(data=svg_data)
-            a, b, w, h = handle.get_dimension_data()
-            return [w,h]
+            handle = Rsvg.Handle.new_from_file(layers[0])
+            return [handle.width, handle.height]
         elif ftype == "png":
             surface = cairo.ImageSurface.create_from_png(layers[0])
             return [float(surface.get_width()), float(surface.get_height())]
@@ -140,10 +136,7 @@ class Renderer(object):
             self.__logger.debug("Drawing layer " + str(layer) +" " + str(scale) + " at "  + str(time.time() - timerstart))
             print 'drawing layer', type, str(layer)
             if type == "svg":
-                f = open(layer, "rb")
-                svg_data = f.read()
-                f.close()
-                handle = rsvg.Handle(data=svg_data)
+                handle = Rsvg.Handle.new_from_file(layer)
                 handle.render_cairo(ctx)
             elif type == "png":
                 png_surface = cairo.ImageSurface.create_from_png(layer)
