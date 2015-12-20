@@ -21,7 +21,8 @@
 
 import logging
 import os
-import gobject
+
+from gi.repository import GObject
 
 import telepathy
 import telepathy.client
@@ -30,8 +31,8 @@ import dbus
 from dbus.service import method, signal
 from dbus.gobject_service import ExportedGObject
 
-from sugar.presence import presenceservice
-from sugar.presence.tubeconn import TubeConnection
+from sugar3.presence import presenceservice
+from sugar3.presence.tubeconn import TubeConnection
 
 import utils
 from sharedslides import SharedSlides
@@ -44,12 +45,12 @@ PATH = "/edu/washington/cs/ClassroomPresenterXO"
 class Shared(ExportedGObject):
 
     __gsignals__ = {
-        'navigation-lock-change' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_BOOLEAN,)),
-        'deck-download-complete' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
+        'navigation-lock-change' : (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_BOOLEAN,)),
+        'deck-download-complete' : (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
         }
         
     def __init__(self, activity, deck, work_path):
-        gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
 
         self.__activity = activity
         self.__deck = deck
@@ -71,6 +72,7 @@ class Shared(ExportedGObject):
         """ Called when the activity is shared """
         self.__logger.debug('The activity has been shared.')
         self.__is_initiating = True
+        print 'shared_cb call write_file', self.__cpxo.path
         self.__activity.write_file(self.__cpxo_path)
         self.__deck.set_is_initiating(is_init=True)
         self.shared_setup()
@@ -384,4 +386,4 @@ class Shared(ExportedGObject):
         if self.__is_initiating is True:
             utils.run_dialog("Instructor", buddy.props.nick + " has left!")
 
-gobject.type_register(Shared)
+GObject.type_register(Shared)

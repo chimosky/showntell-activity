@@ -17,15 +17,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-from sugar.activity import activity
-from sugar.graphics.toolbutton import ToolButton
-from sugar.graphics.menuitem import MenuItem
-from sugar.graphics.objectchooser import ObjectChooser
-from sugar.datastore import datastore
+from sugar3.activity import activity
+from sugar3.graphics.toolbutton import ToolButton
+from sugar3.graphics.menuitem import MenuItem
+from sugar3.graphics.objectchooser import ObjectChooser
+from sugar3.datastore import datastore
 
-import gtk
-import gobject
-import pango
 import logging
 import threading
 import os, sys
@@ -36,19 +33,36 @@ import slideshow
 import subprocess
 import listview
 
-#import htmlview
-#import hulahop
-from sugar import env
-#hulahop.startup(os.path.join(env.get_profile_path(), 'gecko'))
+from gi.repository import Gtk
+from gi.repository import Gio
+from gi.repository import Pango
+from gi.repository import GObject
+#from gi.repository import WebKit
+#from gi.repository.WebKit import WebView
+
+from sugar3 import env
 
 #from hulahop.webview import WebView
 
 DATASTORE = '/home/olpc/.sugar/default/datastore/store'
 
-class NavToolBar(gtk.Toolbar):
+def get_mounts():    
+    volume_monitor = Gio.VolumeMonitor.get()
+    
+    mounts = []
+    for mount in volume_monitor.get_mounts():
+        description = {}
+        description['mount_path'] = mount.get_default_location().get_path()
+        description['label'] = mount.get_name()
+        mounts.append(description)
+        
+    return mounts
+
+
+class NavToolBar(Gtk.Toolbar):
     
     def __init__(self, activity, shared, deck):
-        gtk.Toolbar.__init__(self)
+        Gtk.Toolbar.__init__(self)
     
         self.__deck = deck
         self.__activity = activity
@@ -70,10 +84,10 @@ class NavToolBar(gtk.Toolbar):
         self.__nextbtn.show()
         
         # page number widget and navigation
-        self.__num_page_item = gtk.ToolItem()
+        self.__num_page_item = Gtk.ToolItem()
         self.__num_current_page = 1
         
-        self.__num_page_entry = gtk.Entry()
+        self.__num_page_entry = Gtk.Entry()
         self.__num_page_entry.set_text(str(self.__num_current_page))
         self.__num_page_entry.set_alignment(1)
         self.__num_page_entry.connect('activate', self.num_page_activate)
@@ -88,12 +102,20 @@ class NavToolBar(gtk.Toolbar):
         
         
         # total page number widget
-        self.__total_page_item = gtk.ToolItem()
-        self.__total_page_label = gtk.Label()
+        self.__total_page_item = Gtk.ToolItem()
+        self.__total_page_label = Gtk.Label()
         
-        label_attributes = pango.AttrList()
-        label_attributes.insert(pango.AttrSize(14000, 0, -1))
-        label_attributes.insert(pango.AttrForeground(65535, 65535, 65535, 0, -1))
+        label_attributes = Pango.AttrList()
+        size = Pango.AttrSize()
+        size.size = 14000
+        label_attributes.insert(size)
+
+        color = Pango.Color()
+        color.red = 65535
+        color.green = 65535
+        color.blue = 65535
+        label_attributes.insert(color)
+
         self.__total_page_label.set_attributes(label_attributes)
 
         self.__total_page_label.set_text(' / ' + str(self.__deck.getSlideCount()))
@@ -102,27 +124,9 @@ class NavToolBar(gtk.Toolbar):
 
         self.insert(self.__total_page_item, -1)
         self.__total_page_item.show()
-
-        # separator between navigation buttons and deck title
-        separator = gtk.SeparatorToolItem()
-        separator.set_draw(False)
-        separator.set_expand(True)
-        self.insert(separator, -1)
-        separator.show()
-
-        #deck title
-        self.__title_item = gtk.ToolItem()
-        self.title = gtk.Label()
-        self.title.set_text(self.__deck.get_title())
-        self.title.set_width_chars(20)
-        self.title.set_alignment(0,1)
-        self.__title_item.add(self.title)
-        self.title.show()
-        self.insert(self.__title_item,-1)
-        self.__title_item.show()
-
-        # separator between deck title  and lock button
-        separator = gtk.SeparatorToolItem()
+        
+        # separator between navigation buttons and lock button
+        separator = Gtk.SeparatorToolItem()
         separator.set_draw(False)
         separator.set_expand(True)
         self.insert(separator, -1)
@@ -133,7 +137,7 @@ class NavToolBar(gtk.Toolbar):
         self.__unlockBtn.set_tooltip("Student Navigation Unlocked")
 
         # navigation is unlocked by default, so insert the unlock button
-        self.insert(self.__unlockBtn, 7)
+        self.insert(self.__unlockBtn, 5)
         self.__unlockBtn.show()
         
         # locked button
@@ -151,7 +155,6 @@ class NavToolBar(gtk.Toolbar):
         self.slide_changed(self.__deck)
         self.show()
         
-
     def activity_shared_cb(self, widget):
         #Callback for when the activity is shared
         # bind the lock button click with switching lock mode
@@ -214,12 +217,12 @@ class NavToolBar(gtk.Toolbar):
         self.__deck.goToIndex(page_entered - 1, is_local=True)
 
 
-class InkToolBar(gtk.Toolbar):
+class InkToolBar(Gtk.Toolbar):
 
     # Constructor
     def __init__(self, slideviewer, deck):
 
-        gtk.Toolbar.__init__(self)
+        Gtk.Toolbar.__init__(self)
         
         self.__slideviewer = slideviewer
         self.__cur_color = slideviewer.get_color()
@@ -231,7 +234,7 @@ class InkToolBar(gtk.Toolbar):
         self.__is_instr = False
                 
         # Red Ink
-        self.__red = gtk.RadioToolButton()
+        self.__red = Gtk.RadioToolButton()
         self.__red.set_icon_name('red-button')
         self.insert(self.__red, -1)
         self.__red.show()
@@ -239,7 +242,7 @@ class InkToolBar(gtk.Toolbar):
         self.__red.connect('clicked', self.set_ink_color, 1.0, 0.0, 0.0, "red")
 
         # Green Ink
-        self.__green = gtk.RadioToolButton(group=self.__red)
+        self.__green = Gtk.RadioToolButton(group=self.__red)
         self.__green.set_icon_name('green-button')
         self.insert(self.__green, -1)
         self.__green.show()
@@ -247,7 +250,7 @@ class InkToolBar(gtk.Toolbar):
         self.__green.connect('clicked', self.set_ink_color, 0.0, 1.0, 0.0, "green")
 
         # Blue Ink
-        self.__blue = gtk.RadioToolButton(group=self.__red)
+        self.__blue = Gtk.RadioToolButton(group=self.__red)
         self.__blue.set_icon_name('blue-button')
         self.insert(self.__blue, -1)
         self.__blue.show()
@@ -255,7 +258,7 @@ class InkToolBar(gtk.Toolbar):
         self.__blue.connect('clicked', self.set_ink_color, 0.0, 0.0, 1.0, "blue")
         
         # Black Ink
-        self.__black = gtk.RadioToolButton(group=self.__red)
+        self.__black = Gtk.RadioToolButton(group=self.__red)
         self.__black.set_icon_name('black-button')
         self.insert(self.__black, -1)
         self.__black.show()
@@ -263,13 +266,13 @@ class InkToolBar(gtk.Toolbar):
         self.__black.connect('clicked', self.set_ink_color, 0.0, 0.0, 0.0, "black")
                 
         # Separate ink from untensils
-        separator = gtk.SeparatorToolItem()
+        separator = Gtk.SeparatorToolItem()
         separator.set_draw(False)
         self.insert(separator, -1)
         separator.show()
 
         # Pencil
-        self.__pencil = gtk.RadioToolButton()
+        self.__pencil = Gtk.RadioToolButton()
         self.__pencil.set_icon_name('tool-pencil')
         self.insert(self.__pencil, -1)
         self.__pencil.show()
@@ -277,7 +280,7 @@ class InkToolBar(gtk.Toolbar):
         self.__pencil.connect('clicked', self.set_cur_pen, 4)
         
         # Brush
-        self.__brush = gtk.RadioToolButton(self.__pencil)
+        self.__brush = Gtk.RadioToolButton(self.__pencil)
         self.__brush.set_icon_name('tool-brush')
         self.insert(self.__brush, -1)
         self.__brush.show()
@@ -300,7 +303,7 @@ class InkToolBar(gtk.Toolbar):
         """
         
         # Separate tools from text
-        separator = gtk.SeparatorToolItem()
+        separator = Gtk.SeparatorToolItem()
         separator.set_draw(False)
         self.insert(separator, -1)
         separator.show()
@@ -319,7 +322,7 @@ class InkToolBar(gtk.Toolbar):
         self.__redo.set_tooltip('Redo')
         self.__redo.connect('clicked', self.redo)
         
-        separator = gtk.SeparatorToolItem()
+        separator = Gtk.SeparatorToolItem()
         separator.set_draw(False)
         separator.set_expand(True)
         self.insert(separator, -1)
@@ -402,12 +405,29 @@ class InkToolBar(gtk.Toolbar):
             else:
                 self.__submit.set_sensitive(True)
 
-class MakeToolBar(gtk.Toolbar):
+class MakeToolBar(Gtk.Toolbar):
 
-    def __init__(self, activity, deck):
-        gtk.Toolbar.__init__(self)
-        self.activity = activity
+    def __init__(self, this_activity, deck):
+        Gtk.Toolbar.__init__(self)
+        self.activity = this_activity
         self.deck = deck
+
+        #get mount points
+        ds_mounts = get_mounts()
+        pendrive = -1
+        for i in range(0, len(ds_mounts), 1):
+            print 'mount', i, ds_mounts[i]['uri'], ds_mounts[i]['title'], ds_mounts[i]['id']
+            if ds_mounts[i]['uri'].find('datastore') > 0:
+                journal = i
+            else:
+                pendrive = i
+     
+        
+        #self.__newbtn = ToolButton('new-transparency')
+        #self.__newbtn.set_tooltip("New slideshow")
+        #self.__newbtn.connect('clicked', self.new)
+        #self.insert(self.__newbtn, -1)
+        #self.__newbtn.show()
 
         self.__openbtn = ToolButton('showntell-activity')
         self.__openbtn.set_tooltip("Choose slideshow")
@@ -415,60 +435,128 @@ class MakeToolBar(gtk.Toolbar):
         self.insert(self.__openbtn, -1)
         self.__openbtn.show()
         
+        #self.__htmlbutton = ToolButton('new')
+        #self.__htmlbutton.set_tooltip("test tw")
+        #self.__htmlbutton.connect('clicked', self.showhtml)
+        #self.insert(self.__htmlbutton, -1)
+        #self.__htmlbutton.show()
+
         self.__journalbtn = ToolButton('activity-journal')
         self.__journalbtn.set_tooltip("Choose image")
-        dsmounts = datastore.mounts()
-        self.__journalbtn.connect('clicked', self.chooseimage, dsmounts[0]['id'], DATASTORE)
+        self.__journalbtn.connect('clicked', self.chooseimage, ds_mounts[journal]['id'], DATASTORE)
         self.insert(self.__journalbtn, -1)
         self.__journalbtn.show()
         
+        #show pendrive button only if pendrive is mounted
+        if pendrive > -1:
+            self.__pendrivebutton = ToolButton('media-flash-usb')
+            self.__pendrivebutton.set_tooltip("Choose image")
+            self.__pendrivebutton.connect('clicked', self.chooseimage, ds_mounts[pendrive]['id'], ds_mounts[pendrive]['title'])
+            self.insert(self.__pendrivebutton, -1)
+            self.__pendrivebutton.show()
+
         # deck title display and edit
-        self.__decktitle_item = gtk.ToolItem()
-        self.decktitle = gtk.Entry()
-        self.decktitle.set_text(self.deck.get_title())
-        self.decktitle.connect('focus_out_event',self.decktitle_change_cb)
-        self.decktitle.set_alignment(0)
-        self.decktitle.set_width_chars(20)
-        self.__decktitle_item.add(self.decktitle)
-        self.decktitle.show()
-        self.insert(self.__decktitle_item,-1)
+        self.__decktitle_item = Gtk.ToolItem()
+
+        self.__decktitle = Gtk.Entry()
+        try:
+            title = self.deck.get_title()
+        except:
+            title = ""
+        print 'self.__decktitle.set_text', title
+        self.__decktitle.set_text(title)
+        self.__decktitle.set_alignment(0)
+        self.__decktitle.connect('activate', self.decktitle_change_cb)
+        #self.deck.connect('decktitle_changed', self.decktitle_change_cb)
+
+        self.__decktitle.set_width_chars(20)
+
+        self.__decktitle_item.add(self.__decktitle)
+        self.__decktitle.show()
+
+        self.insert(self.__decktitle_item, -1)
         self.__decktitle_item.show()
 
         # slide title display and edit
-        self.__slidetitle_item = gtk.ToolItem()
-        self.__slidetitle = gtk.Entry()
+        self.__slidetitle_item = Gtk.ToolItem()
+
+        self.__slidetitle = Gtk.Entry()
         self.__slidetitle.set_text("Slide 0")
         self.__slidetitle.set_alignment(0)
         self.__slidetitle.connect('activate', self.slidetitle_change_cb)
         self.deck.connect('slide-redraw', self.slidetitle_changed_cb)
+
         self.__slidetitle.set_width_chars(20)
+
         self.__slidetitle_item.add(self.__slidetitle)
         self.__slidetitle.show()
+
         self.insert(self.__slidetitle_item, -1)
         self.__slidetitle_item.show()
 
+        # separator between presentation buttons and help button
+        separator = Gtk.SeparatorToolItem()
+        separator.set_draw(False)
+        separator.set_expand(True)
+        self.insert(separator, -1)
+        separator.show()
+
+        #self.__helpbtn = ToolButton('help-button')
+        #self.__helpbtn.set_tooltip("Select help presentation")
+        #self.__helpbtn.connect('clicked', self.help)
+        #self.insert(self.__helpbtn, -1)
+        #self.__helpbtn.show()
+
+        #self.__reloadbtn = ToolButton()
+        #self.__reloadbtn.set_icon_name('green-button')
+        #self.__reloadbtn.connect('clicked', self.reload)
+        #self.insert(self.__reloadbtn, -1)
+        #self.__reloadbtn.show()
+
         self.show()
 
-    def decktitle_change_cb(self, widget, event):
-        self.deck.set_title(self.decktitle.get_text())
-        self.activity.navTB.title.set_text(self.deck.get_title())
+    def decktitle_change_cb(self, widget):
+        self.deck.set_title(self.__decktitle.get_text())
+
+    def decktitle_set_new(self, title):
+        self.__decktitle.set_text(title)
 
     def slidetitle_change_cb(self, widget):
-        #change the title of this slide
-        n=self.deck.getIndex()
-        self.deck.set_SlideTitle(n, self.__slidetitle.get_text())
+        self.deck.set_SlideTitle(self.__slidetitle.get_text())
 
     def slidetitle_changed_cb(self, widget):
-        #display title of current slide
-        n=self.deck.getIndex()
-        self.__slidetitle.set_text(self.deck.get_SlideTitle(n))
+        self.__slidetitle.set_text(self.deck.get_SlideTitle())
+
+    def new(self, widget):
+        print 'New slideshow'
+        #no effect if slideshow is already 'new', e.g. when ShowNTell is opened
+        #directly not by read_file
+        #this needs to be changed to show slideshow with html title slide
+        self.activity.read_file(path(activity.get_bundle_path()) / 'resources' / 'new.cpxo')
 
     def open(self, widget):
+        print 'Open slideshow'
         scrn3 = self.activity.set_screen(2)
         treeview = scrn3.get_treeView()
+        print 'set_cpxo_store'
         treeview.set_model(scrn3.set_store("datastore"))
+        print 'slideshow treeview model set'
+
+    def help(self, widget):
+        scrn3 = self.activity.set_screen(2)
+        #here select help.cpxo in resources
+        fn = path(activity.get_bundle_path()) / 'resources' / 'help.cpxo'
+        self.activity.read_file(fn)
 
     def chooseimage(self, widget, source, pth):
         scrn2 = self.activity.set_screen(1)
         treeview = scrn2.get_treeView()
         treeview.set_model(scrn2.set_store(source, pth))
+
+    def reload(self, widget):
+        self.deck.reload()
+
+    def showhtml(self, widget):
+        self.activity.set_screen(4)
+        #intended to show listview of available html templates/slides
+        #future feature, not implemented

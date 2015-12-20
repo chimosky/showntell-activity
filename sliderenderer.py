@@ -21,22 +21,26 @@
 
 import cairo
 import rsvg
-import gtk
 import os
 import utils
 import time
 import logging
-import hulahop
 import xml.dom.minidom
-from sugar import env
-hulahop.startup(os.path.join(env.get_profile_path(), 'gecko'))
-from hulahop.webview import WebView
+
+from sugar3 import env
+
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GdkPixbuf
+from gi.repository.WebKit import WebView
+
+#hulahop.startup(os.path.join(env.get_profile_path(), 'gecko'))
 
 class Renderer(object):
     def __init__(self, activity, deck):
         """Constructs a new SlideRenderer that will render slides from deck"""
         self.__logger = logging.getLogger('Renderer')
-        #self.__logger.setLevel('error')
+        self.__logger.setLevel('ERROR')
         self.__deck = deck
         self.__activity = activity
         self.__wv = WebView()
@@ -47,10 +51,7 @@ class Renderer(object):
         """Returns the [width, height] of the first slide layer"""
         if n is None:
             n = self.__deck.getIndex()
-        try:
-            layers = self.__deck.getSlideLayers(n)
-        except:
-            layers=[]
+        layers = self.__deck.getSlideLayers(n)
         
         # return some default reasonable value if this is an empty slide
         if len(layers) == 0:
@@ -71,7 +72,7 @@ class Renderer(object):
             surface = cairo.ImageSurface.create_from_png(layers[0])
             return [float(surface.get_width()), float(surface.get_height())]
         elif ftype == "jpg":
-            pbuf = gtk.gdk.pixbuf_new_from_file(layers[0])
+            pbuf = GdkPixbuf.Pixbuf.new_from_file(layers[0])
             return [float(pbuf.get_width()), float(pbuf.get_height())]
         else:
             return [640.0, 480.0]
@@ -92,10 +93,10 @@ class Renderer(object):
             n = self.__deck.getIndex()
             
         timerstart = time.time()
-            
+
         self.__logger.debug("rendering slide " + str(n))
-        ctx = gtk.gdk.CairoContext(cairo.Context(surface))
-        #ctx = cairo.Context(surface)
+        ##ctx = gtk.gdk.CairoContext(cairo.Context(surface))
+        ctx = cairo.Context(surface)
         
         self.__logger.debug("Got context at " + str(time.time() - timerstart))
         
@@ -105,10 +106,12 @@ class Renderer(object):
             srcw = 640
         if srch > 480:
             srch = 480
+
         targw = float(surface.get_width())
         targh = float(surface.get_height())
         x_scale = targw/srcw
         y_scale = targh/srch
+        print 'rendering slide', str(n), "w=", targw, srcw, x_scale, "h=", targh, srch, y_scale
         
         self.__logger.debug("Surface is " + str(targw) +  "x" + str(targh)) 
         
@@ -133,7 +136,9 @@ class Renderer(object):
         self.__logger.debug("Got layers at " + str(time.time() - timerstart))
         for layer in layers:
             type = utils.getFileType(layer)
+            print 'Drawing layer ', type, layer
             self.__logger.debug("Drawing layer " + str(layer) +" " + str(scale) + " at "  + str(time.time() - timerstart))
+            print 'drawing layer', type, str(layer)
             if type == "svg":
                 f = open(layer, "rb")
                 svg_data = f.read()
@@ -154,6 +159,7 @@ class Renderer(object):
                 ctx.fill()
             elif type == "html":
                 #use hulahop to display
+                print 'html slide', self.__htmlflag, layer
                 scrn4 = self.__activity.set_screen(3)
                 if self.__htmlflag:
                     scrn4.add(self.__wv)

@@ -22,28 +22,25 @@
 
 import os, time
 from path import path
-import pygtk
-import gtk
 import logging
 import subprocess
-from sugar.activity import activity
+from sugar3.activity import activity
 
-import pygst
-pygst.require("0.10")
-import gst
+from gi.repository import Gtk
+from gi.repository import Gst
 
 AUDIOPATH = path(activity.get_activity_root()) / 'data' / 'temp.wav'
 
-class TextArea(gtk.HBox):
+class TextArea(Gtk.HBox):
 
         # Constructor
         def __init__(self, deck, work_path):
-            gtk.HBox.__init__(self)
+            Gtk.HBox.__init__(self)
 
             self.__logger = logging.getLogger('TextArea')
             self.__deck = deck
             self.__work_path = work_path
-            self.__text_area = gtk.Entry()
+            self.__text_area = Gtk.Entry()
             self.render_text_area()
             self.__deck.connect('slide-redraw', self.update_text)
             self.__text_area.connect('changed', self.text_changed)
@@ -111,7 +108,7 @@ class TextArea(gtk.HBox):
                 n = self.__deck.getIndex()
                 self.__audiofile = self.__deck.getSlideClip(n)
                 if self.__audiofile == False:
-                    self.__audiofile = self.__deck.get_SlideTitle(n) + '.ogg'
+                    self.__audiofile = self.__deck.get_SlideTitle() + '.ogg'
                 audiofile = self.__work_path / 'deck' / self.__audiofile
                 print 'audiofile', n, audiofile
                 if audiofile.exists():
@@ -137,8 +134,7 @@ class TextArea(gtk.HBox):
         def play(self, button):
             if button.get_active():
                 #play clip
-                n = self.__deck.getIndex()
-                clip = self.__deck.getSlideClip(n)
+                clip = self.__deck.getSlideClip()
                 print 'play clip:', clip
                 if clip:
                     cmd = "gst-launch-0.10 filesrc location=" + clip
@@ -149,19 +145,21 @@ class TextArea(gtk.HBox):
                 subprocess.call("killall -q gst-launch-0.10", shell=True)
 
         # Create buttons for audio controls
-        def create_bbox(self, title=None, spacing=0, layout=gtk.BUTTONBOX_SPREAD):
-            frame = gtk.Frame(title)
-            bbox = gtk.HButtonBox()
+        def create_bbox(self, title=None, spacing=0, layout=Gtk.ButtonBoxStyle.SPREAD):
+            frame = Gtk.Frame()
+            frame.set_label(title)
+
+            bbox = Gtk.HButtonBox()
             bbox.set_border_width(5)
             bbox.set_layout(layout)
             bbox.set_spacing(spacing)
 
-            button = gtk.ToggleButton('gtk-media-record')
+            button = Gtk.ToggleButton('Gtk-media-record')
             button.set_use_stock(True)
             button.connect("clicked", self.record)
             bbox.pack_start(button, False, False, 0)
 
-            button = gtk.ToggleButton('gtk-media-play')
+            button = Gtk.ToggleButton('Gtk-media-play')
             button.set_use_stock(True)
             button.connect("clicked", self.play)
             bbox.pack_start(button, False, False, 0)

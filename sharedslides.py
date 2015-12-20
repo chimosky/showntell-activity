@@ -25,7 +25,8 @@ import sys
 import os
 import time
 import random
-import gobject
+
+from gi.repository import GObject
 
 import telepathy
 import telepathy.client
@@ -34,9 +35,9 @@ import dbus
 from dbus.service import method, signal
 from dbus.gobject_service import ExportedGObject
 
-from sugar.presence import presenceservice
-from sugar import network
-from sugar.presence.tubeconn import TubeConnection
+from sugar3.presence import presenceservice
+from sugar3 import network
+from sugar3.presence.tubeconn import TubeConnection
 
 SERVICE = "edu.washington.cs.ClassroomPresenterXO"
 IFACE = SERVICE
@@ -54,15 +55,15 @@ class ReadHTTPServer(network.GlibTCPServer):
         network.GlibTCPServer.__init__(self, server_address, ReadHTTPRequestHandler)
 
 
-class SharedSlides(gobject.GObject):
+class SharedSlides(GObject.GObject):
     """ Handles all sharing of slides and ink """
 
     __gsignals__ = {
-        'deck-download-complete' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
+        'deck-download-complete' : (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
         }
 
     def __init__(self, init, cpxo_path, shared_activity, read_file_cb):
-        gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
 
         self.__is_initiating = init
         self.__cpxo_path = cpxo_path
@@ -173,4 +174,4 @@ class SharedSlides(gobject.GObject):
                                      telepathy.SOCKET_ACCESS_CONTROL_LOCALHOST, 0)
         self.__logger.debug('Made a stream tube.')
 
-gobject.type_register(SharedSlides)
+GObject.type_register(SharedSlides)

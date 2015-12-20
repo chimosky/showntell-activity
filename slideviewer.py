@@ -2,7 +2,7 @@
 
 # slideviewer.py
 #
-# Class for displaying Classroom Presenter SVG slides in a GTK widget
+# Class for displaying Classroom Presenter SVG slides in a Gtk widget
 # B. Mayton <bmayton@cs.washington.edu>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -21,25 +21,27 @@
 
 import cairo
 import rsvg
-import gtk
 import os
 import time
 import ink
 import logging
-import gobject
 
-class SlideViewer(gtk.EventBox):
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GObject
+
+class SlideViewer(Gtk.EventBox):
     __gsignals__ = {'button_press_event' : 'override',
                     'button_release_event' : 'override',
                     'motion_notify_event' : 'override',
                     'enter_notify_event'    : 'override',
-                    'undo-redo-changed' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
+                    'undo-redo-changed' : (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
                     }
     
     def __init__(self, deck, renderer):
-        gtk.EventBox.__init__(self)
+        Gtk.EventBox.__init__(self)
         self.__logger = logging.getLogger('SlideViewer')
-        #self.__logger.setLevel('error')
+        self.__logger.setLevel('ERROR')
         self.__deck = deck
         self.__canvas = SlideViewerCanvas(deck, renderer)
         self.add(self.__canvas)
@@ -167,22 +169,17 @@ class SlideViewer(gtk.EventBox):
         return (deltaX > 3 or deltaX < -3 or deltaY > 3 or deltaY < -3)
         
     def do_enter_notify_event(self, event):
-        self.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.PENCIL))
+        self.window.set_cursor(Gdk.Cursor(Gdk.CursorType.PENCIL))
 
-class SlideViewerCanvas(gtk.DrawingArea):
-    """
-    __gsignals__ = {'expose_event' : 'override',
+class SlideViewerCanvas(Gtk.DrawingArea):
+    __gsignals__ = {'draw' : 'override',
                     'configure_event' : 'override',
                     }
-    """
-    __gsignals__ = {'expose_event' : 'override',
-                    }
-
 
     def __init__ (self, deck, renderer):
-        gtk.DrawingArea.__init__ (self)
+        Gtk.DrawingArea.__init__ (self)
         self.__logger = logging.getLogger('SlideViewerCanvas')
-        #self.__logger.setLevel('error')
+        self.__logger.setLevel('ERROR')
         self.__surface = None
         self.__renderer = renderer
         self.__deck = deck
@@ -193,6 +190,7 @@ class SlideViewerCanvas(gtk.DrawingArea):
         self.cur_pen = None
         self.cur_color = None
 
+        self.connect("draw", self._do_draw_cb)
             
     def show_slide(self, n=None):
         timerstart = time.time()
@@ -226,16 +224,16 @@ class SlideViewerCanvas(gtk.DrawingArea):
         self.__context.stroke()
     
     def do_configure_event(self, event):
-        #Reload the slide when assigned a new height/width
+        """Reload the slide when assigned a new height/width"""
         if self.__renderer:
             self.show_slide()
 
-    def do_expose_event (self, event):
+    def _do_draw_cb(self, widget, context):
         """Draw the slide surface into the DrawingArea"""
         timerstart = time.time()
         if self.__surface:
             # Draw the (cached) slide
-            self.__context = self.window.cairo_create()
+            self.__context = context
             self.__context.set_source_surface(self.__surface, 0, 0)
             self.__context.paint()
             self.draw_ink_paths(self.instr_ink)
@@ -263,24 +261,27 @@ class SlideViewerCanvas(gtk.DrawingArea):
         return self.cur_color
     
 
-class ThumbViewer(gtk.DrawingArea):
+class ThumbViewer(Gtk.DrawingArea):
     
-    __gsignals__  = {'expose_event' : 'override',
+    __gsignals__  = {'draw' : 'override',
                     }
     
     def __init__ (self, deck, renderer, n):
-        gtk.DrawingArea.__init__ (self)
+        Gtk.DrawingArea.__init__ (self)
         self.__logger = logging.getLogger('ThumbViewer')
-        #self.__logger.setLevel('error')
+        self.__logger.setLevel('ERROR')
         self.__deck = deck
         self.__renderer = renderer
         self.__n = n
         self.__was_highlighted = False
         self.__deck.connect('slide-redraw', self.slide_changed)
         
+        self.connect("draw", self._do_draw_cb)
+        
         # Load thumbnail from the PNG file, if it exists; otherwise draw from scratch
         timerstart = time.time()
         thumb = self.__deck.getSlideThumb(n)
+        print 'getSlideThumb', n, thumb
         if thumb and os.path.exists(thumb):
             self.__surface = cairo.ImageSurface.create_from_png(thumb)
         else:
@@ -294,11 +295,9 @@ class ThumbViewer(gtk.DrawingArea):
             self.__deck.setSlideThumb(name, n)
         self.__logger.debug("Thumbnail loading/drawing took " + str(time.time() - timerstart) + " seconds")
 
-    
-    def do_expose_event (self, event):
+    def do_draw_cb(self, widget, ctx):
         """Redraws the slide thumbnail view"""
         timerstart = time.time()
-        ctx = self.window.cairo_create()
         x, y, width, height = self.allocation
         if self.__n == self.__deck.getIndex():
             ctx.set_source_rgb(0, 1.0, 0)

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# ZetCode PyGTK tutorial
+# ZetCode PyGtk tutorial
 #
 # This example shows a TreeView widget
 # in a list view mode
@@ -10,22 +10,27 @@
 # last edited: February 2009
 
 import sys, os
-import gtk
-from sugar.activity import activity
-from sugar.datastore import datastore
+
+from gi.repository import Gtk
+
+from sugar3.activity import activity
+from sugar3.datastore import datastore
+
 from path import path
 from datetime import datetime
 
-class Cpxoview(gtk.VBox):
+class Cpxoview(Gtk.VBox):
     def __init__(self, activity, deck):
+        print 'cpxoview init'
         self.activity = activity
-        gtk.VBox.__init__(self)
-        vbox = gtk.VBox(False, 8)
-        sw = gtk.ScrolledWindow()
-        sw.set_shadow_type(gtk.SHADOW_ETCHED_IN)
-        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        Gtk.VBox.__init__(self)
+
+        vbox = Gtk.VBox(False, 8)
+        sw = Gtk.ScrolledWindow()
+        sw.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
+        sw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.pack_start(sw, True, True, 0)
-        treeView = gtk.TreeView()
+        treeView = Gtk.TreeView()
         treeView.connect("row-activated", self.on_activated)
         treeView.set_rules_hint(True)
         sw.add(treeView)
@@ -36,14 +41,13 @@ class Cpxoview(gtk.VBox):
         self.show_all()
 
     def create_columns(self, treeView):
-
-        rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Title", rendererText, text=1)
+        rendererText = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("Title", rendererText, text=1)
         column.set_sort_column_id(1)
         treeView.append_column(column)
-        rendererText = gtk.CellRendererText()
-        column = gtk.TreeViewColumn("Date", rendererText, text=2)
-        column.set_sort_order(gtk.SORT_DESCENDING)
+        rendererText = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("Date", rendererText, text=2)
+        column.set_sort_order(Gtk.SortType.ASCENDING)
         column.set_sort_column_id(2)
         treeView.append_column(column)
 
@@ -51,7 +55,8 @@ class Cpxoview(gtk.VBox):
         return self.treeView
 
     def set_store(self, src):
-        store = gtk.ListStore(str, str, str)
+        print 'set_store', src
+        store = Gtk.ListStore(str, str, str)
         #get objects from the local datastore
         if src == "datastore":
             ds_objects, num_objects = datastore.find({'mime_type':['application/x-classroompresenter']})
@@ -78,16 +83,21 @@ class Cpxoview(gtk.VBox):
                 store.append([f.name, "", f.getctime()])
         else:
             print 'error in src', src
+        print 'return cpxo store'
         return store
 
     def on_activated(self, widget, row, col):
 
+        print 'cpxo on_activated'
         model = widget.get_model()
+        print 'row', model[row][0], model[row][1], model[row][2]
         title = model[row][1]
         timestamp = model[row][2]
         object = datastore.get(model[row][0])
         fn = object.file_path
+        print 'object filename', path(fn).exists(), fn
         #open slideshow, set Navigation toolbar current
         self.activity.read_file(fn)
-        object.destroy()
+        for object in ds_objects:
+            object.destroy()
         self.activity.set_screen(0)

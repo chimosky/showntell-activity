@@ -21,20 +21,20 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import pygtk
-import gtk
 import slideshow
 import slideviewer
 import os
 import logging
-import gobject
 
-from sugar.graphics import style
+from gi.repository import Gtk
+from gi.repository import GObject
 
-class SideBar(gtk.Notebook):
+from sugar3.graphics import style
+
+class SideBar(Gtk.Notebook):
 	
 	def __init__(self, deck, renderer):
-		gtk.Notebook.__init__(self)
+		Gtk.Notebook.__init__(self)
 		self.__logger = logging.getLogger('SideBar')
 		self.__deck = deck
 		self.__renderer = renderer	
@@ -45,17 +45,17 @@ class SideBar(gtk.Notebook):
 		#self.show_tabs = True
 		#self.show_border = True
 
-        self.slide_context_menu = gtk.Menu()    # Don't need to show menus
+        self.slide_context_menu = Gtk.Menu()    # Don't need to show menus
 
         # Create the menu items
-        move_item = gtk.ImageMenuItem('Move')
-        img = gtk.Image()
+        move_item = Gtk.ImageMenuItem('Move')
+        img = Gtk.Image()
         img.set_from_file('icons/Icon-move.svg')
         move_item.set_image(img)
         move_item.connect("activate", self.moveslide)
 
-        remove_item = gtk.ImageMenuItem('remove')
-        img = gtk.Image()
+        remove_item = Gtk.ImageMenuItem('remove')
+        img = Gtk.Image()
         img.set_from_file('icons/Icon-remove.svg')
         remove_item.set_image(img)
         remove_item.connect("activate", self.removeslide)
@@ -70,24 +70,24 @@ class SideBar(gtk.Notebook):
 
 		# Create scrolled window for viewing thumbs or subs
 		# Scrollbar: horizontal if necessary; vertical always
-		self.__viewing_box = gtk.ScrolledWindow()
-		self.__viewing_box.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
-		slide_label = gtk.Label("Slides")
-		event_box = gtk.EventBox()
+		self.__viewing_box = Gtk.ScrolledWindow()
+		self.__viewing_box.set_policy(Gtk.POLICY_AUTOMATIC, Gtk.POLICY_ALWAYS)
+		slide_label = Gtk.Label("Slides")
+		event_box = Gtk.EventBox()
 		event_box.add(self.__viewing_box)
 		
 		self.append_page(event_box, slide_label)
 		#self.append_page(self.__viewing_box, sub_label)
 				
-		self.__sublist_store = gtk.ListStore(str, int)
-		self.__sub_col = gtk.TreeViewColumn("Versions of this slide:")
-		self.__sublist = gtk.TreeView(self.__sublist_store)
+		self.__sublist_store = Gtk.ListStore(str, int)
+		self.__sub_col = Gtk.TreeViewColumn("Versions of this slide:")
+		self.__sublist = Gtk.TreeView(self.__sublist_store)
 		self.__sublist.append_column(self.__sub_col)
-		self.__sublist_cell = gtk.CellRendererText()
+		self.__sublist_cell = Gtk.CellRendererText()
 		self.__sub_col.pack_start(self.__sublist_cell, True)
 		self.__sub_col.add_attribute(self.__sublist_cell, 'text', 0)
 		
-		sub_label = gtk.Label("Submissions")
+		sub_label = Gtk.Label("Submissions")
 		self.append_page(self.__sublist, sub_label)
 		
 		#self.__sublist_store.append(["My Ink", -1])
@@ -125,16 +125,13 @@ class SideBar(gtk.Notebook):
 		for c in self.__viewing_box.get_children():
 			self.__viewing_box.remove(c)
 
-		if self.__deck.getSlideCount() < 1:
-			return
-
 		# create image table for thumbnails
-		self.image_table = gtk.Table(self.__deck.getSlideCount(), 1, False)
+		self.image_table = Gtk.Table(self.__deck.getSlideCount(), 1, False)
 
 		# Loop to show slides
 		for i in range(self.__deck.getSlideCount()):		
 			# Create event box for table entry
-			event_box = gtk.EventBox()
+			event_box = Gtk.EventBox()
 			event_box.set_size_request(209, 160)
 
 			# Add navigation to event boxes
@@ -168,7 +165,7 @@ class SideBar(gtk.Notebook):
             self.__deck.save()
             self.__deck.reload()
         else:
-            self.__deck.goToIndex(n, is_local=True)
+		    self.__deck.goToIndex(n, is_local=True)
 
     def moveslide(self, params):
             self.movemode=True
@@ -178,5 +175,3 @@ class SideBar(gtk.Notebook):
             self.__deck.removeSlide(self.selected_slide)
             self.__deck.save()
             self.__deck.reload()
-
-	
