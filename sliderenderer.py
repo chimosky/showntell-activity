@@ -152,7 +152,7 @@ class Renderer(object):
                 ctx.rectangle(0, 0, png_surface.get_width(), png_surface.get_height())
                 ctx.fill()
             elif type == "jpg":
-                jpg_pixbuf = gtk.gdk.pixbuf_new_from_file(layer)
+                jpg_pixbuf = GdkPixbuf.Pixbuf.new_from_file(layer)
                 self.__logger.debug("Got JPG pixbuf at "+ str(time.time() - timerstart))
                 ctx.set_source_pixbuf(jpg_pixbuf, 0, 0)
                 ctx.rectangle(0, 0, jpg_pixbuf.get_width(), jpg_pixbuf.get_height())
