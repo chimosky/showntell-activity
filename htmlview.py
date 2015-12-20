@@ -14,11 +14,12 @@ DATAPATH = path(activity.get_activity_root()) / 'data'
 TESTFILE = BUNDLEPATH / 'slides.html'
 WORKFILE = 'file://' + DATAPATH / 'slides.html'
 
-class Htmlview(gtk.VBox):
+class Htmlview(Gtk.VBox):
 
     def __init__(self):
-        gtk.VBox.__init__(self)
-        #vbox = gtk.VBox(False, 8)
+        Gtk.VBox.__init__(self)
+        self.set_spacing(8)
+
         wv = WebView()
         print 'show', WORKFILE, path(WORKFILE).exists()
         wv.load_uri(WORKFILE)
