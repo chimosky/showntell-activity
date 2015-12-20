@@ -24,6 +24,13 @@
 
 from sugar3.activity import activity
 from sugar3.datastore import datastore
+
+from sugar3.graphics.toolbarbox import ToolbarBox
+from sugar3.graphics.toolbarbox import ToolbarButton
+
+from sugar3.activity.widgets import ActivityToolbarButton
+from sugar3.activity.widgets import StopButton
+
 import logging
 
 import sys, os
@@ -113,16 +120,51 @@ class ShowNTell(activity.Activity):
         inkTB = toolbars.InkToolBar(self.__slide, self.__deck)
 
         # Create the standard activity toolbox; add our toolbars
-        toolbox = activity.ActivityToolbox(self)
-        toolbox.add_toolbar("Presentation", makeTB)
-        toolbox.add_toolbar("Navigation",navTB)
-        toolbox.add_toolbar("Ink", inkTB)
-        self.set_toolbox(toolbox)
-        toolbox.show()
-        self.__toolbox = toolbox
+        toolbar_box = ToolbarBox()
+        self.set_toolbar_box(toolbar_box)
 
-        # Open with slideshow toolbar
-        toolbox.set_current_toolbar(SLIDESHOW_TOOLBAR)
+        toolbar = toolbar_box.toolbar
+
+        activity_button = ActivityToolbarButton(self)
+        toolbar_box.toolbar.insert(activity_button, 0)
+        activity_button.show()
+
+        presentation_toolbar_button = ToolbarButton(
+            page=makeTB,
+            icon_name='toolbar-edit'  ## FIXME: change icon
+        )
+
+        toolbar_box.toolbar.insert(presentation_toolbar_button, -1)
+        presentation_toolbar_button.show()
+
+        navigation_toolbar_button = ToolbarButton(
+            page=navTB,
+            icon_name='toolbar-edit'  ## FIXME: change icon
+        )
+
+        toolbar_box.toolbar.insert(navigation_toolbar_button, -1)
+        navigation_toolbar_button.show()
+
+        ink_toolbar_button = ToolbarButton(
+            page=inkTB,
+            icon_name='toolbar-edit'  ## FIXME: change icon
+        )
+
+        toolbar_box.toolbar.insert(ink_toolbar_button, -1)
+        ink_toolbar_button.show()
+
+        separator = Gtk.SeparatorToolItem()
+        separator.props.draw = False
+        separator.set_expand(True)
+        toolbar_box.toolbar.insert(separator, -1)
+        separator.show()
+
+        stop_button = StopButton(self)
+        stop_button.props.accelerator = '<Ctrl><Shift>Q'
+        toolbar_box.toolbar.insert(stop_button, -1)
+        stop_button.show()
+
+        toolbar_box.show()
 
         # Set up the side scrollbar widget
         self.__side_bar = sidebar.SideBar(self.__deck, self.__renderer)
@@ -193,7 +235,6 @@ class ShowNTell(activity.Activity):
         print 'read_file: before', self.__deck.get_title(), self.metadata['title']
         self.__makeTB.decktitle_set_new(self.metadata['title'])
         print 'read_file: after',  self.__deck.get_title()
-        self.__toolbox.set_current_toolbar(NAVIGATION_TOOLBAR)
         newindex = 0
         if 'current_index' in self.metadata:
             newindex = int(self.metadata.get('current_index', '0'))
@@ -201,7 +242,6 @@ class ShowNTell(activity.Activity):
 
     #save state in journal for resume
     def write_file(self, file_path):
-        print 'write_file', self.__toolbox.get_current_toolbar(), str(file_path)
         self.__logger.debug("write_file " + str(file_path))
         print 'title', self.__deck.get_title()
         self.metadata['title'] = self.__deck.get_title()

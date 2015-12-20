@@ -34,6 +34,7 @@ import subprocess
 import listview
 
 from gi.repository import Gtk
+from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import Pango
 from gi.repository import GObject
@@ -50,11 +51,18 @@ def get_mounts():
     volume_monitor = Gio.VolumeMonitor.get()
     
     mounts = []
-    for mount in volume_monitor.get_mounts():
+    for volume in volume_monitor.get_volumes():  # Get all volumes (mounted and no mounted)
+    
+        print "GETTING VOLUMES", volume.get_name(), volume.get_identifier("uuid")
+
+        if not volume.get_mount():  # Is not mounted
+            continue
+
+        mount = volume.get_mount()
         description = {}
         description['uri'] = mount.get_default_location().get_path()
         description['title'] = mount.get_name()
-        description['id'] = mount.get_uuid()
+        description['id'] = volume.get_identifier("uuid")
         mounts.append(description)
         
     return mounts
@@ -104,22 +112,9 @@ class NavToolBar(Gtk.Toolbar):
         
         # total page number widget
         self.__total_page_item = Gtk.ToolItem()
-        self.__total_page_label = Gtk.Label()
-        
-        label_attributes = Pango.AttrList()
-        size = Pango.AttrSize()
-        size.size = 14000
-        label_attributes.insert(size)
-
-        color = Pango.Color()
-        color.red = 65535
-        color.green = 65535
-        color.blue = 65535
-        label_attributes.insert(color)
-
-        self.__total_page_label.set_attributes(label_attributes)
-
-        self.__total_page_label.set_text(' / ' + str(self.__deck.getSlideCount()))
+        self.__total_page_label = Gtk.Label(' / ' + str(self.__deck.getSlideCount()))
+        self.__total_page_label.modify_font(Pango.FontDescription("14"))
+        self.__total_page_label.modify_fg(Gtk.StateType.NORMAL, Gdk.Color(65535, 65535, 65535))
         self.__total_page_item.add(self.__total_page_label)
         self.__total_page_label.show()
 
@@ -444,7 +439,7 @@ class MakeToolBar(Gtk.Toolbar):
 
         self.__journalbtn = ToolButton('activity-journal')
         self.__journalbtn.set_tooltip("Choose image")
-        self.__journalbtn.connect('clicked', self.chooseimage, ds_mounts[journal]['id'], DATASTORE)
+        #self.__journalbtn.connect('clicked', self.chooseimage, ds_mounts[journal]['id'], DATASTORE)
         self.insert(self.__journalbtn, -1)
         self.__journalbtn.show()
         

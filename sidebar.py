@@ -71,7 +71,7 @@ class SideBar(Gtk.Notebook):
 		# Create scrolled window for viewing thumbs or subs
 		# Scrollbar: horizontal if necessary; vertical always
 		self.__viewing_box = Gtk.ScrolledWindow()
-		self.__viewing_box.set_policy(Gtk.POLICY_AUTOMATIC, Gtk.POLICY_ALWAYS)
+		self.__viewing_box.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
 		slide_label = Gtk.Label("Slides")
 		event_box = Gtk.EventBox()
 		event_box.add(self.__viewing_box)
@@ -158,7 +158,8 @@ class SideBar(Gtk.Notebook):
 	def change_slide(self, widget, event, n):
         if event.button == 3:
             self.selected_slide = n
-	        self.slide_context_menu.popup( None, None, None, event.button, event.time)
+            self.slide_context_menu.show_all()
+	        self.slide_context_menu.popup(None, None, None, None, event.button, event.time)
         elif self.movemode:
             self.movemode=False
             self.__deck.moveSlide(self.moved_slide, n)
