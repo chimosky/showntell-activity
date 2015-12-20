@@ -168,7 +168,8 @@ class SlideViewer(Gtk.EventBox):
         return (deltaX > 3 or deltaX < -3 or deltaY > 3 or deltaY < -3)
         
     def do_enter_notify_event(self, event):
-        self.window.set_cursor(Gdk.Cursor(Gdk.CursorType.PENCIL))
+        window = self.get_window()
+        window.set_cursor(Gdk.Cursor(Gdk.CursorType.PENCIL))
 
 class SlideViewerCanvas(Gtk.DrawingArea):
     __gsignals__ = {'draw' : 'override',
@@ -193,7 +194,10 @@ class SlideViewerCanvas(Gtk.DrawingArea):
             
     def show_slide(self, n=None):
         timerstart = time.time()
-        x, y, width, height = self.allocation
+        alloc = self.get_allocation()
+        width = alloc.width
+        height = alloc.height
+
         self.__surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
         self.__renderer.renderSlideToSurface(self.__surface, n)
         self.instr_ink = []
@@ -215,7 +219,8 @@ class SlideViewerCanvas(Gtk.DrawingArea):
             self.self_ink.append(path)
     
     def draw_ink_seg_immed(self, start, end):
-        self.__context = self.window.cairo_create()
+        window = self.get_window()
+        self.__context = window.cairo_create()
         self.__context.set_source_rgb(self.cur_color[0], self.cur_color[1], self.cur_color[2])
         self.__context.set_line_width(self.cur_pen)
         self.__context.move_to(start[0], start[1])
@@ -294,10 +299,13 @@ class ThumbViewer(Gtk.DrawingArea):
             self.__deck.setSlideThumb(name, n)
         self.__logger.debug("Thumbnail loading/drawing took " + str(time.time() - timerstart) + " seconds")
 
-    def do_draw_cb(self, widget, ctx):
+    def _do_draw_cb(self, widget, ctx):
         """Redraws the slide thumbnail view"""
         timerstart = time.time()
-        x, y, width, height = self.allocation
+        alloc = self.get_allocation()
+        width = alloc.width
+        height = alloc.height
+
         if self.__n == self.__deck.getIndex():
             ctx.set_source_rgb(0, 1.0, 0)
             self.__was_highlighted = True
