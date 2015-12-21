@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 try:
 	from sugar3.activity import bundlebuilder
-	bundlebuilder.start("ClassroomPresenter")
+	bundlebuilder.start()
 except ImportError:
 	import os
 	#os.system("find ./ | sed 's,^./,ClassroomPresenter.activity/,g' > MANIFEST")
