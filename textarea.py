@@ -154,12 +154,12 @@ class TextArea(Gtk.HBox):
             bbox.set_layout(layout)
             bbox.set_spacing(spacing)
 
-            button = Gtk.ToggleButton('Gtk-media-record')
+            button = Gtk.ToggleButton('gtk-media-record')
             button.set_use_stock(True)
             button.connect("clicked", self.record)
             bbox.pack_start(button, False, False, 0)
 
-            button = Gtk.ToggleButton('Gtk-media-play')
+            button = Gtk.ToggleButton('gtk-media-play')
             button.set_use_stock(True)
             button.connect("clicked", self.play)
             bbox.pack_start(button, False, False, 0)
