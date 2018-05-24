@@ -27,9 +27,7 @@ import time
 import random
 
 from gi.repository import GObject
-
-import telepathy
-import telepathy.client
+from gi.repository import TelepathyGLib
 
 import dbus
 from dbus.service import method, signal
@@ -72,7 +70,7 @@ class SharedSlides(GObject.GObject):
         self.__logger = logging.getLogger('SharedSlides')
 
         self.__tubes_chan = self.__shared_activity.telepathy_tubes_chan
-        self.__iface = self.__tubes_chan[telepathy.CHANNEL_TYPE_TUBES]
+        self.__iface = self.__tubes_chan[TelepathyGLib.IFACE_CHANNEL_TYPE_TUBES]
 
         if (self.__is_initiating):
             self.__logger.debug('Hello from SharedSlides (sharer).')
@@ -110,12 +108,12 @@ class SharedSlides(GObject.GObject):
                             id, initiator, type, service, params, state)
         
         if (not self.__have_deck and
-            type == telepathy.TUBE_TYPE_STREAM and
+            type == TelepathyGLib.TubeType.STREAM and
             service == SERVICE and
-            state == telepathy.TUBE_STATE_LOCAL_PENDING):
+            state == TelepathyGLib.TubeState.LOCAL_PENDING):
             addr = self.__iface.AcceptStreamTube(id,
-                                                 telepathy.SOCKET_ADDRESS_TYPE_IPV4,
-                                                 telepathy.SOCKET_ACCESS_CONTROL_LOCALHOST, 0,
+                                                 TelepathyGLib.SocketAddressType.IPV4,
+                                                 TelepathyGLib.SocketAccessControl.LOCALHOST, 0,
                                                  utf8_strings=True)
             self.__logger.debug("Got a stream tube!")
             
@@ -169,9 +167,9 @@ class SharedSlides(GObject.GObject):
         self.__logger.debug('Started an HTTP server on port %d', self.__port)
 
         self.__iface.OfferStreamTube(SERVICE, {},
-                                     telepathy.SOCKET_ADDRESS_TYPE_IPV4,
+                                     TelepathyGLib.SocketAddressType.IPV4,
                                      (self.__ip_addr, dbus.UInt16(self.__port)),
-                                     telepathy.SOCKET_ACCESS_CONTROL_LOCALHOST, 0)
+                                     TelepathyGLib.SocketAccessControl.LOCALHOST, 0)
         self.__logger.debug('Made a stream tube.')
 
 GObject.type_register(SharedSlides)
