@@ -21,41 +21,48 @@
 import random
 import logging
 
+
 class Path:
-	
-	def __init__(self, inkstr=None):
-		self.__logger = logging.getLogger('Path')
-		self.points=[]
-		self.color = (0,0,1.0)
-		self.pen = 4
-		self.uid = random.randint(0, 2147483647)
-		if inkstr:
-			try:
-				i=0
-				parts = inkstr.split('#')
-				if len(parts) > 1:
-					params = parts[i].split(';')
-					self.uid = int(params[0])
-					colorparts = params[1].split(',')
-					self.color = (float(colorparts[0]),float(colorparts[1]),float(colorparts[2]))
-					self.pen = float(params[2])
-					i = i + 1
-				pathstr = parts[i]
-				pointstrs = pathstr.split(';')
-				for pointstr in pointstrs:
-					pparts = pointstr.split(',')
-					if len(pparts) == 2:
-						self.add((int(pparts[0]), int(pparts[1])))
-			except Exception, e:
-				self.__logger.debug('Could not unserialize ink string (old ink?)')
-	
-	def add(self, point):
-		self.points.append(point)
-	
-	def __str__(self):
-		s = str(self.uid) + ";"
-		s = s +  str(self.color[0]) + "," + str(self.color[1]) + "," + str(self.color[2]) + ";"
-		s = s + str(self.pen) + "#"
-		for p in self.points:
-			s = s + str(int(p[0])) + "," + str(int(p[1])) + ";"
-		return s
+
+    def __init__(self, inkstr=None):
+        self.__logger = logging.getLogger('Path')
+        self.points = []
+        self.color = (0, 0, 1.0)
+        self.pen = 4
+        self.uid = random.randint(0, 2147483647)
+        if inkstr:
+            try:
+                i = 0
+                parts = inkstr.split('#')
+                if len(parts) > 1:
+                    params = parts[i].split(';')
+                    self.uid = int(params[0])
+                    colorparts = params[1].split(',')
+                    self.color = (
+                        float(
+                            colorparts[0]), float(
+                            colorparts[1]), float(
+                            colorparts[2]))
+                    self.pen = float(params[2])
+                    i = i + 1
+                pathstr = parts[i]
+                pointstrs = pathstr.split(';')
+                for pointstr in pointstrs:
+                    pparts = pointstr.split(',')
+                    if len(pparts) == 2:
+                        self.add((int(pparts[0]), int(pparts[1])))
+            except Exception as e:
+                self.__logger.debug(
+                    'Could not unserialize ink string (old ink?)')
+
+    def add(self, point):
+        self.points.append(point)
+
+    def __str__(self):
+        s = str(self.uid) + ";"
+        s = s + str(self.color[0]) + "," + \
+            str(self.color[1]) + "," + str(self.color[2]) + ";"
+        s = s + str(self.pen) + "#"
+        for p in self.points:
+            s = s + str(int(p[0])) + "," + str(int(p[1])) + ";"
+        return s

@@ -25,7 +25,8 @@ from sugar3.datastore import datastore
 
 import logging
 import threading
-import os, sys
+import os
+import sys
 from time import strftime
 import utils
 from path import path
@@ -47,11 +48,13 @@ from sugar3 import env
 
 DATASTORE = '/home/olpc/.sugar/default/datastore/store'
 
+
 def get_mounts():
     volume_monitor = Gio.VolumeMonitor.get()
-    
+
     mounts = []
-    for volume in volume_monitor.get_volumes():  # Get all volumes (mounted and no mounted)
+    for volume in volume_monitor.get_volumes(
+    ):  # Get all volumes (mounted and no mounted)
 
         print "GETTING VOLUMES", volume.get_name(), volume.get_identifier("uuid")
 
@@ -64,43 +67,43 @@ def get_mounts():
         description['title'] = mount.get_name()
         description['id'] = volume.get_identifier("uuid")
         mounts.append(description)
-        
+
     return mounts
 
 
 class NavToolBar(Gtk.Toolbar):
-    
+
     def __init__(self, activity, shared, deck):
         Gtk.Toolbar.__init__(self)
-    
+
         self.__deck = deck
         self.__activity = activity
         self.__shared = shared
         self.__logger = logging.getLogger('Navigation Toolbar')
 
         self.__is_initiating = True
-        
+
         self.__prevbtn = ToolButton('go-previous')
         self.__prevbtn.set_tooltip("Previous slide")
         self.__prevbtn.connect('clicked', self.previous)
         self.insert(self.__prevbtn, -1)
         self.__prevbtn.show()
-        
+
         self.__nextbtn = ToolButton('go-next')
         self.__nextbtn.set_tooltip("Next slide")
         self.__nextbtn.connect('clicked', self.next)
         self.insert(self.__nextbtn, -1)
         self.__nextbtn.show()
-        
+
         # page number widget and navigation
         self.__num_page_item = Gtk.ToolItem()
         self.__num_current_page = 1
-        
+
         self.__num_page_entry = Gtk.Entry()
         self.__num_page_entry.set_text(str(self.__num_current_page))
         self.__num_page_entry.set_alignment(1)
         self.__num_page_entry.connect('activate', self.num_page_activate)
-        
+
         self.__num_page_entry.set_width_chars(4)
 
         self.__num_page_item.add(self.__num_page_entry)
@@ -108,19 +111,21 @@ class NavToolBar(Gtk.Toolbar):
 
         self.insert(self.__num_page_item, -1)
         self.__num_page_item.show()
-        
-        
+
         # total page number widget
         self.__total_page_item = Gtk.ToolItem()
-        self.__total_page_label = Gtk.Label(' / ' + str(self.__deck.getSlideCount()))
+        self.__total_page_label = Gtk.Label(
+            ' / ' + str(self.__deck.getSlideCount()))
         self.__total_page_label.modify_font(Pango.FontDescription("14"))
-        self.__total_page_label.modify_fg(Gtk.StateType.NORMAL, Gdk.Color(65535, 65535, 65535))
+        self.__total_page_label.modify_fg(
+            Gtk.StateType.NORMAL, Gdk.Color(
+                65535, 65535, 65535))
         self.__total_page_item.add(self.__total_page_label)
         self.__total_page_label.show()
 
         self.insert(self.__total_page_item, -1)
         self.__total_page_item.show()
-        
+
         # separator between navigation buttons and lock button
         separator = Gtk.SeparatorToolItem()
         separator.set_draw(False)
@@ -135,24 +140,25 @@ class NavToolBar(Gtk.Toolbar):
         # navigation is unlocked by default, so insert the unlock button
         self.insert(self.__unlockBtn, 5)
         self.__unlockBtn.show()
-        
+
         # locked button
         self.__lockBtn = ToolButton('locked')
         self.__lockBtn.set_tooltip("Student Navigation Locked")
 
-        self.__logger.debug("Connecting to navigation locking and activity sharing signals.")
+        self.__logger.debug(
+            "Connecting to navigation locking and activity sharing signals.")
         self.__activity.connect('shared', self.activity_shared_cb)
         self.__activity.connect('joined', self.activity_joined_cb)
         self.__shared.connect('navigation-lock-change', self.set_lock_button)
-        
+
         # triggers for when slides are changed
         self.__deck.connect("slide-changed", self.slide_changed)
         self.__deck.connect("deck-changed", self.slide_changed)
         self.slide_changed(self.__deck)
         self.show()
-        
+
     def activity_shared_cb(self, widget):
-        #Callback for when the activity is shared
+        # Callback for when the activity is shared
         # bind the lock button click with switching lock mode
         self.__lockBtn.connect('clicked', self.__shared.lock_mode_switch)
         self.__unlockBtn.connect('clicked', self.__shared.lock_mode_switch)
@@ -163,7 +169,7 @@ class NavToolBar(Gtk.Toolbar):
 
     def set_lock_button(self, widget, is_locked):
         self.__logger.debug("Changing lock button, lock mode %u, init %u",
-                    is_locked, self.__is_initiating)
+                            is_locked, self.__is_initiating)
         if is_locked:
             new_button = self.__lockBtn
             if not self.__is_initiating:
@@ -174,19 +180,19 @@ class NavToolBar(Gtk.Toolbar):
             if not self.__is_initiating:
                 self.__prevbtn.set_sensitive(True)
                 self.__nextbtn.set_sensitive(True)
-        
+
         old = self.get_nth_item(5)
         self.remove(old)
         self.insert(new_button, 5)
         new_button.show()
         self.queue_draw()
-        
+
     def next(self, widget):
         self.__deck.next()
-            
+
     def previous(self, widget):
         self.__deck.previous()
-        
+
     def slide_changed(self, widget):
         self.__logger.debug("Changing slides!")
         if self.__deck.isAtBeginning():
@@ -197,11 +203,12 @@ class NavToolBar(Gtk.Toolbar):
             self.__nextbtn.set_sensitive(False)
         else:
             self.__nextbtn.set_sensitive(True)
-        
+
         self.__num_current_page = self.__deck.getIndex()
         self.__num_page_entry.set_text(str(self.__num_current_page + 1))
-        self.__total_page_label.set_text(' / ' + str(self.__deck.getSlideCount()))
-        
+        self.__total_page_label.set_text(
+            ' / ' + str(self.__deck.getSlideCount()))
+
     def num_page_activate(self, entry):
         page_entered = int(entry.get_text())
 
@@ -219,7 +226,7 @@ class InkToolBar(Gtk.Toolbar):
     def __init__(self, slideviewer, deck):
 
         Gtk.Toolbar.__init__(self)
-        
+
         self.__slideviewer = slideviewer
         self.__cur_color = slideviewer.get_color()
         self.__cur_color_str = "blue"
@@ -228,7 +235,7 @@ class InkToolBar(Gtk.Toolbar):
         self.__deck.connect('slide-redraw', self.update_buttons)
         self.__slideviewer.connect('undo-redo-changed', self.update_buttons)
         self.__is_instr = False
-                
+
         # Red Ink
         self.__red = Gtk.RadioToolButton()
         self.__red.set_icon_name('red-button')
@@ -243,7 +250,13 @@ class InkToolBar(Gtk.Toolbar):
         self.insert(self.__green, -1)
         self.__green.show()
         #self.__green.set_tooltip('Green Ink')
-        self.__green.connect('clicked', self.set_ink_color, 0.0, 1.0, 0.0, "green")
+        self.__green.connect(
+            'clicked',
+            self.set_ink_color,
+            0.0,
+            1.0,
+            0.0,
+            "green")
 
         # Blue Ink
         self.__blue = Gtk.RadioToolButton(group=self.__red)
@@ -251,16 +264,28 @@ class InkToolBar(Gtk.Toolbar):
         self.insert(self.__blue, -1)
         self.__blue.show()
         #self.__blue.set_tooltip('Blue Ink')
-        self.__blue.connect('clicked', self.set_ink_color, 0.0, 0.0, 1.0, "blue")
-        
+        self.__blue.connect(
+            'clicked',
+            self.set_ink_color,
+            0.0,
+            0.0,
+            1.0,
+            "blue")
+
         # Black Ink
         self.__black = Gtk.RadioToolButton(group=self.__red)
         self.__black.set_icon_name('black-button')
         self.insert(self.__black, -1)
         self.__black.show()
         #self.__black.set_tooltip('Black Ink')
-        self.__black.connect('clicked', self.set_ink_color, 0.0, 0.0, 0.0, "black")
-                
+        self.__black.connect(
+            'clicked',
+            self.set_ink_color,
+            0.0,
+            0.0,
+            0.0,
+            "black")
+
         # Separate ink from untensils
         separator = Gtk.SeparatorToolItem()
         separator.set_draw(False)
@@ -272,24 +297,24 @@ class InkToolBar(Gtk.Toolbar):
         self.__pencil.set_icon_name('tool-pencil')
         self.insert(self.__pencil, -1)
         self.__pencil.show()
-        #self.__pencil.set_tooltip('Pencil')
+        # self.__pencil.set_tooltip('Pencil')
         self.__pencil.connect('clicked', self.set_cur_pen, 4)
-        
+
         # Brush
         self.__brush = Gtk.RadioToolButton(self.__pencil)
         self.__brush.set_icon_name('tool-brush')
         self.insert(self.__brush, -1)
         self.__brush.show()
-        #self.__brush.set_tooltip('Brush')
+        # self.__brush.set_tooltip('Brush')
         self.__brush.connect('clicked', self.set_cur_pen, 8)
 
-        # Erase 
+        # Erase
         self.__erase = ToolButton('tool-eraser')
         self.insert(self.__erase, -1)
         self.__erase.show()
         self.__erase.set_tooltip('Erase All Ink')
         self.__erase.connect('clicked', self.set_erase)
-        
+
         """
         # Text
         self.__text = ToolButton('text')
@@ -297,63 +322,62 @@ class InkToolBar(Gtk.Toolbar):
         self.__text.show()
         self.__text.set_tooltip('Text')
         """
-        
+
         # Separate tools from text
         separator = Gtk.SeparatorToolItem()
         separator.set_draw(False)
         self.insert(separator, -1)
         separator.show()
-        
+
         # Undo
         self.__undo = ToolButton('edit-undo')
         self.insert(self.__undo, -1)
         self.__undo.show()
         self.__undo.set_tooltip('Undo')
         self.__undo.connect('clicked', self.undo)
-        
+
         # Redo
         self.__redo = ToolButton('edit-redo')
         self.insert(self.__redo, -1)
         self.__redo.show()
         self.__redo.set_tooltip('Redo')
         self.__redo.connect('clicked', self.redo)
-        
+
         separator = Gtk.SeparatorToolItem()
         separator.set_draw(False)
         separator.set_expand(True)
         self.insert(separator, -1)
         separator.show()
-        
-        self.__submit = ToolButton('dialog-ok') #FIXME (though actually not a terrible icon)
+
+        # FIXME (though actually not a terrible icon)
+        self.__submit = ToolButton('dialog-ok')
         self.insert(self.__submit, -1)
         self.__submit.show()
         self.__submit.set_tooltip('Broadcast Submission')
         self.__submit.connect('clicked', self.submit_ink)
-        
+
         self.__deck.connect('instr_state_propagate', self.instructor_state_cb)
-        
+
         self.set_tool_buttons()
         self.show()
-    
+
     def instructor_state_cb(self, widget, is_instr):
         self.__is_instr = is_instr
         if is_instr:
             self.__submit.set_tooltip('Broadcast Submission')
         else:
             self.__submit.set_tooltip('Submit Ink')
-            
-    
+
     def set_cur_pen(self, widget, size):
         self.__slideviewer.set_pen(size)
 
-    def set_ink_color(self, widget, r, g, b, color):    
+    def set_ink_color(self, widget, r, g, b, color):
         self.__slideviewer.set_color(r, g, b)
-            
-    
+
     def set_erase(self, widget):
         self.__slideviewer.clear_ink()
-        
-    def set_tool_buttons(self): 
+
+    def set_tool_buttons(self):
         if self.__cur_color == (1.0, 0.0, 0.0):
             self.__red.set_active(True)
         elif self.__cur_color == (0.0, 1.0, 0.0):
@@ -362,13 +386,12 @@ class InkToolBar(Gtk.Toolbar):
             self.__blue.set_active(True)
         else:
             self.__black.set_active(True)
-            
+
         if self.__cur_pen == 2:
             self.__pencil.set_active(True)
         elif self.__cur_pen == 5:
             self.__brush.set_active(True)
-            
-    
+
     def submit_ink(self, widget):
         if self.__is_instr:
             self.broadcast_ink()
@@ -377,20 +400,20 @@ class InkToolBar(Gtk.Toolbar):
             self.__timer = threading.Timer(3.0, self.reenable_submissions)
             self.__timer.start()
             self.__slideviewer.submit_ink()
-        
+
     def broadcast_ink(self):
         self.__slideviewer.broadcast_ink()
-    
+
     def reenable_submissions(self):
         self.__submit.set_sensitive(True)
         self.__submit.queue_draw()
-    
+
     def undo(self, widget):
         self.__slideviewer.undo()
-    
+
     def redo(self, widget):
         self.__slideviewer.redo()
-    
+
     def update_buttons(self, widget=None):
         can_undo, can_redo = self.__slideviewer.can_undo_redo()
         self.__undo.set_sensitive(can_undo)
@@ -401,6 +424,7 @@ class InkToolBar(Gtk.Toolbar):
             else:
                 self.__submit.set_sensitive(True)
 
+
 class MakeToolBar(Gtk.Toolbar):
 
     def __init__(self, this_activity, deck):
@@ -408,7 +432,7 @@ class MakeToolBar(Gtk.Toolbar):
         self.activity = this_activity
         self.deck = deck
 
-        #get mount points
+        # get mount points
         ds_mounts = get_mounts()
         pendrive = -1
         for i in range(0, len(ds_mounts), 1):
@@ -417,37 +441,40 @@ class MakeToolBar(Gtk.Toolbar):
                 journal = i
             else:
                 pendrive = i
-     
-        
+
         #self.__newbtn = ToolButton('new-transparency')
         #self.__newbtn.set_tooltip("New slideshow")
         #self.__newbtn.connect('clicked', self.new)
         #self.insert(self.__newbtn, -1)
-        #self.__newbtn.show()
+        # self.__newbtn.show()
 
         self.__openbtn = ToolButton('showntell-activity')
         self.__openbtn.set_tooltip("Choose slideshow")
         self.__openbtn.connect('clicked', self.open)
         self.insert(self.__openbtn, -1)
         self.__openbtn.show()
-        
+
         #self.__htmlbutton = ToolButton('new')
         #self.__htmlbutton.set_tooltip("test tw")
         #self.__htmlbutton.connect('clicked', self.showhtml)
         #self.insert(self.__htmlbutton, -1)
-        #self.__htmlbutton.show()
+        # self.__htmlbutton.show()
 
         self.__journalbtn = ToolButton('activity-journal')
         self.__journalbtn.set_tooltip("Choose image")
         #self.__journalbtn.connect('clicked', self.chooseimage, ds_mounts[journal]['id'], DATASTORE)
         self.insert(self.__journalbtn, -1)
         self.__journalbtn.show()
-        
-        #show pendrive button only if pendrive is mounted
+
+        # show pendrive button only if pendrive is mounted
         if pendrive > -1:
             self.__pendrivebutton = ToolButton('media-flash-usb')
             self.__pendrivebutton.set_tooltip("Choose image")
-            self.__pendrivebutton.connect('clicked', self.chooseimage, ds_mounts[pendrive]['id'], ds_mounts[pendrive]['title'])
+            self.__pendrivebutton.connect(
+                'clicked',
+                self.chooseimage,
+                ds_mounts[pendrive]['id'],
+                ds_mounts[pendrive]['title'])
             self.insert(self.__pendrivebutton, -1)
             self.__pendrivebutton.show()
 
@@ -457,7 +484,7 @@ class MakeToolBar(Gtk.Toolbar):
         self.__decktitle = Gtk.Entry()
         try:
             title = self.deck.get_title()
-        except:
+        except BaseException:
             title = ""
         print 'self.__decktitle.set_text', title
         self.__decktitle.set_text(title)
@@ -501,13 +528,13 @@ class MakeToolBar(Gtk.Toolbar):
         #self.__helpbtn.set_tooltip("Select help presentation")
         #self.__helpbtn.connect('clicked', self.help)
         #self.insert(self.__helpbtn, -1)
-        #self.__helpbtn.show()
+        # self.__helpbtn.show()
 
         #self.__reloadbtn = ToolButton()
-        #self.__reloadbtn.set_icon_name('green-button')
+        # self.__reloadbtn.set_icon_name('green-button')
         #self.__reloadbtn.connect('clicked', self.reload)
         #self.insert(self.__reloadbtn, -1)
-        #self.__reloadbtn.show()
+        # self.__reloadbtn.show()
 
         self.show()
 
@@ -525,10 +552,14 @@ class MakeToolBar(Gtk.Toolbar):
 
     def new(self, widget):
         print 'New slideshow'
-        #no effect if slideshow is already 'new', e.g. when ShowNTell is opened
-        #directly not by read_file
-        #this needs to be changed to show slideshow with html title slide
-        self.activity.read_file(path(activity.get_bundle_path()) / 'resources' / 'new.cpxo')
+        # no effect if slideshow is already 'new', e.g. when ShowNTell is opened
+        # directly not by read_file
+        # this needs to be changed to show slideshow with html title slide
+        self.activity.read_file(
+            path(
+                activity.get_bundle_path()) /
+            'resources' /
+            'new.cpxo')
 
     def open(self, widget):
         print 'Open slideshow'
@@ -540,7 +571,7 @@ class MakeToolBar(Gtk.Toolbar):
 
     def help(self, widget):
         scrn3 = self.activity.set_screen(2)
-        #here select help.cpxo in resources
+        # here select help.cpxo in resources
         fn = path(activity.get_bundle_path()) / 'resources' / 'help.cpxo'
         self.activity.read_file(fn)
 
@@ -554,5 +585,5 @@ class MakeToolBar(Gtk.Toolbar):
 
     def showhtml(self, widget):
         self.activity.set_screen(4)
-        #intended to show listview of available html templates/slides
-        #future feature, not implemented
+        # intended to show listview of available html templates/slides
+        # future feature, not implemented

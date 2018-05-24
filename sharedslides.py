@@ -46,19 +46,21 @@ PATH = "/edu/washington/cs/ClassroomPresenterXO"
 class ReadHTTPRequestHandler(network.ChunkedGlibHTTPRequestHandler):
     def translate_path(self, path):
         return self.server._filepath
- 
+
+
 class ReadHTTPServer(network.GlibTCPServer):
     def __init__(self, server_address, filepath):
         self._filepath = filepath
-        network.GlibTCPServer.__init__(self, server_address, ReadHTTPRequestHandler)
+        network.GlibTCPServer.__init__(
+            self, server_address, ReadHTTPRequestHandler)
 
 
 class SharedSlides(GObject.GObject):
     """ Handles all sharing of slides and ink """
 
     __gsignals__ = {
-        'deck-download-complete' : (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
-        }
+        'deck-download-complete': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
+    }
 
     def __init__(self, init, cpxo_path, shared_activity, read_file_cb):
         GObject.GObject.__init__(self)
@@ -91,10 +93,11 @@ class SharedSlides(GObject.GObject):
 
     def handle_download_fail(self):
         """ If an attempt to download the deck fails, this method takes care of it """
-        self.__logger.error('Download failed! Sleeping five seconds and trying again.')
+        self.__logger.error(
+            'Download failed! Sleeping five seconds and trying again.')
         time.sleep(5)
         self.get_stream_tube()
-        
+
     def list_tubes_reply_cb(self, tubes):
         for tube_info in tubes:
             self.new_tube_cb(*tube_info)
@@ -104,19 +107,27 @@ class SharedSlides(GObject.GObject):
         self.handle_download_fail
 
     def new_tube_cb(self, id, initiator, type, service, params, state):
-        self.__logger.debug('New tube: ID=%d initiator=%d type=%d service=%s params=%r state=%d',
-                            id, initiator, type, service, params, state)
-        
+        self.__logger.debug(
+            'New tube: ID=%d initiator=%d type=%d service=%s params=%r state=%d',
+            id,
+            initiator,
+            type,
+            service,
+            params,
+            state)
+
         if (not self.__have_deck and
             type == TelepathyGLib.TubeType.STREAM and
             service == SERVICE and
-            state == TelepathyGLib.TubeState.LOCAL_PENDING):
-            addr = self.__iface.AcceptStreamTube(id,
-                                                 TelepathyGLib.SocketAddressType.IPV4,
-                                                 TelepathyGLib.SocketAccessControl.LOCALHOST, 0,
-                                                 utf8_strings=True)
+                state == TelepathyGLib.TubeState.LOCAL_PENDING):
+            addr = self.__iface.AcceptStreamTube(
+                id,
+                TelepathyGLib.SocketAddressType.IPV4,
+                TelepathyGLib.SocketAccessControl.LOCALHOST,
+                0,
+                utf8_strings=True)
             self.__logger.debug("Got a stream tube!")
-            
+
             # sanity checks
             assert isinstance(addr, dbus.Struct)
             assert len(addr) == 2
@@ -128,12 +139,17 @@ class SharedSlides(GObject.GObject):
 
             self.__logger.debug("The stream tube is good!")
             self.download_file(ip_addr, port, id)
-            
+
     def download_file(self, ip_addr, port, tube_id):
         """ Performs the actual download of the slide deck """
-        self.__logger.debug("Downloading from ip %s and port %d.", ip_addr, port)
+        self.__logger.debug(
+            "Downloading from ip %s and port %d.",
+            ip_addr,
+            port)
 
-        getter = network.GlibURLDownloader("http://%s:%d/document" % (ip_addr, port))
+        getter = network.GlibURLDownloader(
+            "http://%s:%d/document" %
+            (ip_addr, port))
         getter.connect("finished", self.download_result_cb, tube_id)
         getter.connect("progress", self.download_progress_cb, tube_id)
         getter.connect("error", self.download_error_cb, tube_id)
@@ -162,14 +178,20 @@ class SharedSlides(GObject.GObject):
         # get a somewhat random port number
         self.__port = random.randint(1024, 65535)
         self.__ip_addr = "127.0.0.1"
-        
+
         self._fileserver = ReadHTTPServer(("", self.__port), self.__cpxo_path)
         self.__logger.debug('Started an HTTP server on port %d', self.__port)
 
-        self.__iface.OfferStreamTube(SERVICE, {},
-                                     TelepathyGLib.SocketAddressType.IPV4,
-                                     (self.__ip_addr, dbus.UInt16(self.__port)),
-                                     TelepathyGLib.SocketAccessControl.LOCALHOST, 0)
+        self.__iface.OfferStreamTube(
+            SERVICE,
+            {},
+            TelepathyGLib.SocketAddressType.IPV4,
+            (self.__ip_addr,
+             dbus.UInt16(
+                 self.__port)),
+            TelepathyGLib.SocketAccessControl.LOCALHOST,
+            0)
         self.__logger.debug('Made a stream tube.')
+
 
 GObject.type_register(SharedSlides)

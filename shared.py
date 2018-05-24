@@ -46,10 +46,10 @@ PATH = "/edu/washington/cs/ClassroomPresenterXO"
 class Shared(ExportedGObject):
 
     __gsignals__ = {
-        'navigation-lock-change' : (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_BOOLEAN,)),
-        'deck-download-complete' : (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
-        }
-        
+        'navigation-lock-change': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_BOOLEAN,)),
+        'deck-download-complete': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
+    }
+
     def __init__(self, activity, deck, work_path):
         GObject.GObject.__init__(self)
 
@@ -57,7 +57,7 @@ class Shared(ExportedGObject):
         self.__deck = deck
         self.__logger = logging.getLogger('Shared')
 
-        self.__is_initiating = True # defaults to instructor
+        self.__is_initiating = True  # defaults to instructor
         self.__shared_slides = None
         self.__got_dbus_tube = False
         self.__locked = False
@@ -110,41 +110,50 @@ class Shared(ExportedGObject):
         #self.__shared_activity.connect('buddy-joined', self.buddy_joined_cb)
         #self.__shared_activity.connect('buddy-left', self.buddy_left_cb)
 
-        # takes care of downloading (and then sharing) the slide deck over stream tubes
-        self.__shared_slides = SharedSlides(self.__is_initiating, self.__cpxo_path,
-                                            self.__shared_activity, self.__activity.read_file)
-        self.__shared_slides.connect('deck-download-complete', self.deck_download_complete_cb)
+        # takes care of downloading (and then sharing) the slide deck over
+        # stream tubes
+        self.__shared_slides = SharedSlides(
+            self.__is_initiating,
+            self.__cpxo_path,
+            self.__shared_activity,
+            self.__activity.read_file)
+        self.__shared_slides.connect(
+            'deck-download-complete',
+            self.deck_download_complete_cb)
 
         # now for the dbus tube
         self.__iface.connect_to_signal('NewTube', self.new_tube_cb)
 
         if (self.__is_initiating):
-            self.__logger.debug("We are sharing, making a dbus tube and setting locked nav mode.")
+            self.__logger.debug(
+                "We are sharing, making a dbus tube and setting locked nav mode.")
             self.lock_nav()
             id = self.__iface.OfferDBusTube(SERVICE, {})
         else:
-            self.__logger.debug("We are joining, looking for the global dbus tube.")
+            self.__logger.debug(
+                "We are joining, looking for the global dbus tube.")
             self.__tubes_chan[TelepathyGLib.IFACE_CHANNEL_TYPE_TUBES].ListTubes(
                 reply_handler=self.list_tubes_reply_cb,
                 error_handler=self.list_tubes_error_cb)
-
 
     """ --- START DBUS TUBE CODE --- """
 
     def deck_download_complete_cb(self, object):
         """ Catches the local deck_download_complete signal and sends the appropriate dbus signal """
-        self.__logger.debug("Deck download is complete, sending Deck_Download_Complete dbus signal.")
+        self.__logger.debug(
+            "Deck download is complete, sending Deck_Download_Complete dbus signal.")
         self.Deck_Download_Complete()
         self.emit('deck-download-complete')
 
     def student_dl_complete_cb(self, sender):
         """ Catches the Deck_Download_Complete dbus signal from students, lets us know that they
             are ready to have initial state information pushed onto them """
-        self.__logger.debug("Got Deck_Download_Complete dbus signal, pushing initial state info to student.")
+        self.__logger.debug(
+            "Got Deck_Download_Complete dbus signal, pushing initial state info to student.")
         proxy_object = self.__dbus_tube.get_object(sender, PATH)
         proxy_object.Push_Initial_State(self.__locked, self.__deck.getIndex(),
                                         dbus_interface=IFACE)
-        
+
     def list_tubes_reply_cb(self, tubes):
         for tube_info in tubes:
             self.new_tube_cb(*tube_info)
@@ -153,44 +162,60 @@ class Shared(ExportedGObject):
         self.__logger.error('ListTubes() failed: %s', e)
 
     def new_tube_cb(self, tube_id, initiator, type, service, params, state):
-        self.__logger.debug('New tube: ID=%d initator=%d type=%d service=%s params=%r state=%d',
-                            tube_id, initiator, type, service, params, state)
-        if (not self.__got_dbus_tube and type == TelepathyGLib.TubeType.DBUS and service == SERVICE):
+        self.__logger.debug(
+            'New tube: ID=%d initator=%d type=%d service=%s params=%r state=%d',
+            tube_id,
+            initiator,
+            type,
+            service,
+            params,
+            state)
+        if (not self.__got_dbus_tube and type ==
+                TelepathyGLib.TubeType.DBUS and service == SERVICE):
             if state == TelepathyGLib.TubeState.LOCAL_PENDING:
                 self.__iface.AcceptDBusTube(tube_id)
 
-            self.__dbus_tube = TubeConnection(self.__conn, self.__iface, tube_id,
-                                              group_iface=self.__iface_grp)
+            self.__dbus_tube = TubeConnection(
+                self.__conn, self.__iface, tube_id, group_iface=self.__iface_grp)
             self.__got_dbus_tube = True
             self.__logger.debug("Got our dbus tube!")
 
             # lots of stuff to do once we get our tube
             if (self.__is_initiating):
-                self.__deck.connect('slide-changed', self.send_slide_changed_signal)
+                self.__deck.connect(
+                    'slide-changed', self.send_slide_changed_signal)
                 self.__deck.connect('local-ink-added', self.send_ink_path)
-                self.__deck.connect('instructor-ink-cleared', self.instr_clear_ink_cb)
-                self.__deck.connect('instructor-ink-removed', self.instr_remove_ink_cb)
+                self.__deck.connect(
+                    'instructor-ink-cleared',
+                    self.instr_clear_ink_cb)
+                self.__deck.connect(
+                    'instructor-ink-removed',
+                    self.instr_remove_ink_cb)
                 self.__deck.connect('ink-broadcast', self.bcast_submission_cb)
-                self.__dbus_tube.add_signal_receiver(self.student_dl_complete_cb, 'Deck_Download_Complete',
-                                                     IFACE, path=PATH, sender_keyword='sender')
-                self.__dbus_tube.add_signal_receiver(self.receive_submission_cb,
-                                                     'Send_Submission', IFACE, path=PATH)
+                self.__dbus_tube.add_signal_receiver(
+                    self.student_dl_complete_cb,
+                    'Deck_Download_Complete',
+                    IFACE,
+                    path=PATH,
+                    sender_keyword='sender')
+                self.__dbus_tube.add_signal_receiver(
+                    self.receive_submission_cb, 'Send_Submission', IFACE, path=PATH)
             else:
                 self.__deck.connect('ink-submitted', self.submit_ink_cb)
-                self.__dbus_tube.add_signal_receiver(self.slide_changed_cb, 'Slide_Changed',
-                                                     IFACE, path=PATH)
-                self.__dbus_tube.add_signal_receiver(self.lock_nav_cb, 'Lock_Nav',
-                                                     IFACE, path=PATH)
-                self.__dbus_tube.add_signal_receiver(self.add_ink_path_cb, 'Add_Ink_Path',
-                                                     IFACE, path=PATH)
-                self.__dbus_tube.add_signal_receiver(self.recv_instr_clear_ink_cb, 'Instructor_Clear_Ink',
-                                                     IFACE, path=PATH)
-                self.__dbus_tube.add_signal_receiver(self.recv_instr_remove_ink_cb, 'Instructor_Remove_Ink',
-                                                     IFACE, path=PATH)
-                self.__dbus_tube.add_signal_receiver(self.receive_submission_cb,
-                                                     'Bcast_Submission', IFACE, path=PATH)
+                self.__dbus_tube.add_signal_receiver(
+                    self.slide_changed_cb, 'Slide_Changed', IFACE, path=PATH)
+                self.__dbus_tube.add_signal_receiver(
+                    self.lock_nav_cb, 'Lock_Nav', IFACE, path=PATH)
+                self.__dbus_tube.add_signal_receiver(
+                    self.add_ink_path_cb, 'Add_Ink_Path', IFACE, path=PATH)
+                self.__dbus_tube.add_signal_receiver(
+                    self.recv_instr_clear_ink_cb, 'Instructor_Clear_Ink', IFACE, path=PATH)
+                self.__dbus_tube.add_signal_receiver(
+                    self.recv_instr_remove_ink_cb, 'Instructor_Remove_Ink', IFACE, path=PATH)
+                self.__dbus_tube.add_signal_receiver(
+                    self.receive_submission_cb, 'Bcast_Submission', IFACE, path=PATH)
 
-            #self.__dbus_tube.watch_participants(self.participant_change_cb)
+            # self.__dbus_tube.watch_participants(self.participant_change_cb)
 
             super(Shared, self).__init__(self.__dbus_tube, PATH)
 
@@ -200,7 +225,8 @@ class Shared(ExportedGObject):
             buddy = self._get_buddy(handle)
             if buddy is not None:
                 if handle != self.__my_handle and self.__is_initiating:
-                    self.__logger.debug("New student joined: %s", buddy.props.nick)
+                    self.__logger.debug(
+                        "New student joined: %s", buddy.props.nick)
 
         for handle in removed:
             buddy = self._get_buddy(handle)
@@ -210,13 +236,16 @@ class Shared(ExportedGObject):
     @signal(dbus_interface=IFACE, signature='u')
     def Slide_Changed(self, slide_num):
         """ Signals joiners to move to given slide """
-        self.__logger.debug("Sending the Slide_Changed signal with slide num %d.", slide_num)
+        self.__logger.debug(
+            "Sending the Slide_Changed signal with slide num %d.",
+            slide_num)
         pass
 
     @signal(dbus_interface=IFACE, signature='')
     def Deck_Download_Complete(self):
         """ Signal from the student informing instructor that the deck download has finished """
-        self.__logger.debug("Sending Deck_Download_Complete signal, ready for initial state info.")
+        self.__logger.debug(
+            "Sending Deck_Download_Complete signal, ready for initial state info.")
         pass
 
     @signal(dbus_interface=IFACE, signature='u')
@@ -241,13 +270,15 @@ class Shared(ExportedGObject):
         """ Arbitrates the sending of the Slide_Changed signal """
         self.__logger.debug("Got the slide-changed signal.")
         if self.__locked:
-            self.__logger.debug("Navigation is locked, sending Slide_Changed to students.")
+            self.__logger.debug(
+                "Navigation is locked, sending Slide_Changed to students.")
             self.Slide_Changed(self.__deck.getIndex())
 
     def slide_changed_cb(self, slide_idx):
         """ Called on the joiners when they receive the Slide_Changed signal """
-        self.__logger.debug("Received the Slide_Changed signal and changing to slide %d.",
-                            slide_idx)
+        self.__logger.debug(
+            "Received the Slide_Changed signal and changing to slide %d.",
+            slide_idx)
 
         self.__deck.goToIndex(slide_idx, is_local=False)
 
@@ -266,11 +297,11 @@ class Shared(ExportedGObject):
             self.unlock_nav()
         else:
             self.lock_nav()
-    
+
         # if we are instructor, tell student XOs to go into our new lock mode
         if (self.__is_initiating):
             self.Lock_Nav(self.__locked)
-            
+
     def lock_nav(self):
         self.__logger.debug("Locking navigation.")
         self.__locked = True
@@ -290,7 +321,7 @@ class Shared(ExportedGObject):
         self.__logger.debug("send_ink_path called")
         if (self.__is_initiating and self.__got_dbus_tube):
             self.Add_Ink_Path(self.__deck.getIndex(), inkstr)
-    
+
     @signal(dbus_interface=IFACE, signature='us')
     def Add_Ink_Path(self, slide_idx, pathstr):
         self.__logger.debug("Sending new ink path")
@@ -303,10 +334,14 @@ class Shared(ExportedGObject):
         self.__logger.debug('My handle in that group is %u', my_csh)
         if my_csh == cs_handle:
             handle = self.__conn.GetSelfHandle()
-            self.__logger.debug('CS handle %u belongs to me, %u', cs_handle, handle)
+            self.__logger.debug(
+                'CS handle %u belongs to me, %u',
+                cs_handle,
+                handle)
         elif group.GetGroupFlags() & TelepathyGLib.ChannelGroupFlags.CHANNEL_SPECIFIC_HANDLES:
             handle = group.GetHandleOwners([cs_handle])[0]
-            self.__logger.debug('CS handle %u belongs to %u', cs_handle, handle)
+            self.__logger.debug(
+                'CS handle %u belongs to %u', cs_handle, handle)
         else:
             handle = cs_handle
             self.__logger.debug('non-CS handle %u belongs to itself', handle)
@@ -330,48 +365,50 @@ class Shared(ExportedGObject):
             else:
                 sender = 'Unknown'
 
-            self.__logger.debug("Sending submission: idx '%d', sender '%s'.", cur_idx, sender)
+            self.__logger.debug(
+                "Sending submission: idx '%d', sender '%s'.",
+                cur_idx,
+                sender)
             self.Send_Submission(sender, cur_idx, inks, text)
-    
+
     @signal(dbus_interface=IFACE, signature='suss')
     def Send_Submission(self, sender, slide_idx, inks, text):
         pass
-    
+
     def receive_submission_cb(self, sender, slide_idx, inks, text):
         self.__logger.debug("Received submission from '%s'.", sender)
         self.__deck.addSubmission(sender, inks, text, slide_idx)
-        
+
     def bcast_submission_cb(self, widget, whofrom, inks, text):
         if self.__is_initiating and self.__got_dbus_tube:
             cur_idx = self.__deck.getIndex()
             self.Bcast_Submission(whofrom, cur_idx, inks, text)
-    
+
     @signal(dbus_interface=IFACE, signature='suss')
     def Bcast_Submission(self, sender, slide_idx, inks, text):
         pass
-    
+
     def instr_clear_ink_cb(self, widget, idx):
         if self.__is_initiating and self.__got_dbus_tube:
             self.Instructor_Clear_Ink(idx)
-    
+
     @signal(dbus_interface=IFACE, signature='u')
     def Instructor_Clear_Ink(self, idx):
         pass
-    
+
     def recv_instr_clear_ink_cb(self, idx):
         self.__deck.clearInstructorInk(idx)
-    
+
     def instr_remove_ink_cb(self, widget, uid, idx):
         if self.__is_initiating and self.__got_dbus_tube:
             self.Instructor_Remove_Ink(uid, idx)
-    
+
     @signal(dbus_interface=IFACE, signature='uu')
     def Instructor_Remove_Ink(self, uid, idx):
         pass
-    
+
     def recv_instr_remove_ink_cb(self, uid, idx):
         self.__deck.removeInstructorPathByUID(uid, idx)
-
 
     """ --- END DBUS TUBE CODE --- """
 
@@ -386,5 +423,6 @@ class Shared(ExportedGObject):
         """ Called when a buddy leaves the activity """
         if self.__is_initiating is True:
             utils.run_dialog("Instructor", buddy.props.nick + " has left!")
+
 
 GObject.type_register(Shared)

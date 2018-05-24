@@ -14,6 +14,7 @@ DATAPATH = path(activity.get_activity_root()) / 'data'
 TESTFILE = BUNDLEPATH / 'slides.html'
 WORKFILE = 'file://' + DATAPATH / 'slides.html'
 
+
 class Htmlview(Gtk.VBox):
 
     def __init__(self):
@@ -25,5 +26,5 @@ class Htmlview(Gtk.VBox):
         wv.load_uri(WORKFILE)
         wv.show()
         self.pack_start(wv, True, True, 0)
-        #self.add(wv)
+        # self.add(wv)
         self.show_all()
