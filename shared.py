@@ -22,10 +22,11 @@
 import logging
 import os
 
-from gi.repository import GObject
+import gi
+gi.require_version('TelepathyGLib', '0.12')
 
-import telepathy
-import telepathy.client
+from gi.repository import GObject
+from gi.repository import TelepathyGLib
 
 import dbus
 from dbus.service import method, signal
@@ -98,10 +99,10 @@ class Shared(ExportedGObject):
             return
 
         self.__tubes_chan = self.__shared_activity.telepathy_tubes_chan
-        self.__iface = self.__tubes_chan[telepathy.CHANNEL_TYPE_TUBES]
+        self.__iface = self.__tubes_chan[TelepathyGLib.IFACE_CHANNEL_TYPE_TUBES]
 
         self.__text_chan = self.__shared_activity.telepathy_text_chan
-        self.__iface_grp = self.__text_chan[telepathy.CHANNEL_INTERFACE_GROUP]
+        self.__iface_grp = self.__text_chan[TelepathyGLib.IFACE_CHANNEL_INTERFACE_GROUP]
 
         self.__conn = self.__shared_activity.telepathy_conn
         self.__my_handle = self.__conn.GetSelfHandle()
@@ -123,7 +124,7 @@ class Shared(ExportedGObject):
             id = self.__iface.OfferDBusTube(SERVICE, {})
         else:
             self.__logger.debug("We are joining, looking for the global dbus tube.")
-            self.__tubes_chan[telepathy.CHANNEL_TYPE_TUBES].ListTubes(
+            self.__tubes_chan[TelepathyGLib.IFACE_CHANNEL_TYPE_TUBES].ListTubes(
                 reply_handler=self.list_tubes_reply_cb,
                 error_handler=self.list_tubes_error_cb)
 
@@ -154,8 +155,8 @@ class Shared(ExportedGObject):
     def new_tube_cb(self, tube_id, initiator, type, service, params, state):
         self.__logger.debug('New tube: ID=%d initator=%d type=%d service=%s params=%r state=%d',
                             tube_id, initiator, type, service, params, state)
-        if (not self.__got_dbus_tube and type == telepathy.TUBE_TYPE_DBUS and service == SERVICE):
-            if( state == telepathy.TUBE_STATE_LOCAL_PENDING):
+        if (not self.__got_dbus_tube and type == TelepathyGLib.TubeType.DBUS and service == SERVICE):
+            if state == TelepathyGLib.TubeState.LOCAL_PENDING:
                 self.__iface.AcceptDBusTube(tube_id)
 
             self.__dbus_tube = TubeConnection(self.__conn, self.__iface, tube_id,
@@ -303,7 +304,7 @@ class Shared(ExportedGObject):
         if my_csh == cs_handle:
             handle = self.__conn.GetSelfHandle()
             self.__logger.debug('CS handle %u belongs to me, %u', cs_handle, handle)
-        elif group.GetGroupFlags() & telepathy.CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES:
+        elif group.GetGroupFlags() & TelepathyGLib.ChannelGroupFlags.CHANNEL_SPECIFIC_HANDLES:
             handle = group.GetHandleOwners([cs_handle])[0]
             self.__logger.debug('CS handle %u belongs to %u', cs_handle, handle)
         else:
