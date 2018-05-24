@@ -33,9 +33,11 @@ from sugar3.activity.widgets import StopButton
 
 import logging
 
-import sys, os
+import sys
+import os
 import subprocess
-import atexit, signal
+import atexit
+import signal
 import zipfile
 
 from gi.repository import Gtk
@@ -66,19 +68,20 @@ import xml.dom.minidom
 SLIDESHOW_TOOLBAR = 1
 NAVIGATION_TOOLBAR = 2
 
+
 class ShowNTell(activity.Activity):
 
     def __init__(self, handle):
-        #pdb.set_trace()
+        # pdb.set_trace()
         activity.Activity.__init__(self, handle)
         self.__logger = logging.getLogger('ClassroomPresenter')
         logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)s %(message)s')
+                            format='%(asctime)s %(levelname)s %(message)s')
         self.__screens = []
         # Find our instance path
-        self.__work_path = path(self.get_activity_root()) /  'instance'
-        self.__save_path = path(self.get_activity_root()) /  'data'
-        self.__deck_dir = self.__work_path /  'deck'
+        self.__work_path = path(self.get_activity_root()) / 'instance'
+        self.__save_path = path(self.get_activity_root()) / 'data'
+        self.__deck_dir = self.__work_path / 'deck'
         bpth = path(activity.get_bundle_path())
         self.__rsrc_dir = bpth / 'resources'
         self.__handle = handle
@@ -87,7 +90,8 @@ class ShowNTell(activity.Activity):
         print 'enter set_canvas', self.__handle.object_id
         self.set_canvas(self.__slide_view)
 
-        self.__deck = slideshow.Deck(self, handle, self.__rsrc_dir, self.__deck_dir)
+        self.__deck = slideshow.Deck(
+            self, handle, self.__rsrc_dir, self.__deck_dir)
 
         # Set up activity sharing
         self.__shared = shared.Shared(self, self.__deck, self.__work_path)
@@ -102,12 +106,13 @@ class ShowNTell(activity.Activity):
         self.__image_chooser = listview.Listview(self, self.__deck)
         self.__slideshow_chooser = cpxoview.Cpxoview(self, self.__deck)
         self.__html_slide = Gtk.EventBox()
-        self.__html_slide.set_size_request(600,480)
+        self.__html_slide.set_size_request(600, 480)
         self.__main_view_box.pack_start(self.__slide, True, True, 5)
         self.__screens.append(self.__slide)
         self.__main_view_box.pack_start(self.__image_chooser, True, True, 5)
         self.__screens.append(self.__image_chooser)
-        self.__main_view_box.pack_start(self.__slideshow_chooser, True, True, 5)
+        self.__main_view_box.pack_start(
+            self.__slideshow_chooser, True, True, 5)
         self.__screens.append(self.__slideshow_chooser)
         self.__main_view_box.pack_start(self.__html_slide, True, True, 5)
         self.__screens.append(self.__html_slide)
@@ -131,7 +136,7 @@ class ShowNTell(activity.Activity):
 
         presentation_toolbar_button = ToolbarButton(
             page=makeTB,
-            icon_name='toolbar-edit'  ## FIXME: change icon
+            icon_name='toolbar-edit'  # FIXME: change icon
         )
 
         toolbar_box.toolbar.insert(presentation_toolbar_button, -1)
@@ -139,7 +144,7 @@ class ShowNTell(activity.Activity):
 
         navigation_toolbar_button = ToolbarButton(
             page=navTB,
-            icon_name='toolbar-edit'  ## FIXME: change icon
+            icon_name='toolbar-edit'  # FIXME: change icon
         )
 
         toolbar_box.toolbar.insert(navigation_toolbar_button, -1)
@@ -147,7 +152,7 @@ class ShowNTell(activity.Activity):
 
         ink_toolbar_button = ToolbarButton(
             page=inkTB,
-            icon_name='toolbar-edit'  ## FIXME: change icon
+            icon_name='toolbar-edit'  # FIXME: change icon
         )
 
         toolbar_box.toolbar.insert(ink_toolbar_button, -1)
@@ -185,7 +190,7 @@ class ShowNTell(activity.Activity):
         self.__text_area.show()
         self.__image_chooser.hide()
         self.__slideshow_chooser.hide()
-        #self.__html_viewer.hide()
+        # self.__html_viewer.hide()
         separator.show()
         self.__side_bar.show_all()
 
@@ -197,7 +202,8 @@ class ShowNTell(activity.Activity):
         self.__progress_bar = Gtk.ProgressBar()
         self.__progress_view.pack_start(self.__progress_lbl, True, False, 5)
         #self.__progress_view.pack_start(self.__progress_bar, False, False, 5)
-        self.__progress_bar.set_fraction(self.__progress_cur / self.__progress_max)
+        self.__progress_bar.set_fraction(
+            self.__progress_cur / self.__progress_max)
 
         self.__shared.connect('deck-download-complete', self.dl_complete_cb)
 
@@ -210,7 +216,11 @@ class ShowNTell(activity.Activity):
 
     def set_progress_max(self, maxval):
         self.__progress_max = maxval
-        self.__progress_bar.set_fraction(float(self.__progress_cur) / float(self.__progress_max))
+        self.__progress_bar.set_fraction(
+            float(
+                self.__progress_cur) /
+            float(
+                self.__progress_max))
 
     def do_progress_view(self):
         self.set_canvas(self.__progress_view)
@@ -218,9 +228,13 @@ class ShowNTell(activity.Activity):
 
     def set_progress(self, val):
         self.__progress_cur = val
-        self.__progress_bar.set_fraction(float(self.__progress_cur) / float(self.__progress_max))
+        self.__progress_bar.set_fraction(
+            float(
+                self.__progress_cur) /
+            float(
+                self.__progress_max))
 
-    #resume from journal
+    # resume from journal
     def read_file(self, file_path):
         self.__logger.debug("read_file " + str(file_path))
         print 'read_file:', file_path
@@ -234,13 +248,13 @@ class ShowNTell(activity.Activity):
         self.__deck.reload()
         print 'read_file: before', self.__deck.get_title(), self.metadata['title']
         self.__makeTB.decktitle_set_new(self.metadata['title'])
-        print 'read_file: after',  self.__deck.get_title()
+        print 'read_file: after', self.__deck.get_title()
         newindex = 0
         if 'current_index' in self.metadata:
             newindex = int(self.metadata.get('current_index', '0'))
         self.__deck.goToIndex(newindex, is_local=False)
 
-    #save state in journal for resume
+    # save state in journal for resume
     def write_file(self, file_path):
         self.__logger.debug("write_file " + str(file_path))
         print 'title', self.__deck.get_title()
@@ -257,7 +271,7 @@ class ShowNTell(activity.Activity):
     def get_shared_activity(self):
         return self._shared_activity
 
-    def set_screen(self,scrn):
+    def set_screen(self, scrn):
         if len(self.__screens) < 1:
             return
         self.__screens[0].hide()

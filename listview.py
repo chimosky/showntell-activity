@@ -9,13 +9,15 @@
 # website: zetcode.com
 # last edited: February 2009
 
-import sys, os
+import sys
+import os
 
 from gi.repository import Gtk
 
 from sugar3.datastore import datastore
 from path import path
 from datetime import datetime
+
 
 class Listview(Gtk.VBox):
     def __init__(self, activity, deck):
@@ -59,25 +61,26 @@ class Listview(Gtk.VBox):
     def set_store(self, mountpoint, pth):
         print 'set_store', mountpoint, pth
         store = Gtk.ListStore(str, str, str, str)
-        #get objects from the local datastore
-        ds_objects, num_objects = datastore.find({'mountpoints':[mountpoint], 'mime_type':['image/jpg', 'image/png', 'image/svg', 'image/jpeg']})
+        # get objects from the local datastore
+        ds_objects, num_objects = datastore.find({'mountpoints': [mountpoint], 'mime_type': [
+                                                 'image/jpg', 'image/png', 'image/svg', 'image/jpeg']})
         for f in ds_objects:
             try:
                 object = f.object_id
-            except:
+            except BaseException:
                 print 'set object_id failed'
             try:
                 title = f.metadata['title']
-            except:
+            except BaseException:
                 title = ""
             try:
                 mime_type = f.metadata['mime_type']
-            except:
+            except BaseException:
                 mime_type = 'unknown'
             try:
                 t = f.metadata['timestamp']
                 timestamp = datetime.fromtimestamp(t)
-            except:
+            except BaseException:
                 timestamp = ""
             store.append([object, title, mime_type, timestamp])
             print 'store.append', object, title, mime_type, timestamp

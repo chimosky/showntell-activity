@@ -9,7 +9,8 @@
 # website: zetcode.com
 # last edited: February 2009
 
-import sys, os
+import sys
+import os
 
 from gi.repository import Gtk
 
@@ -18,6 +19,7 @@ from sugar3.datastore import datastore
 
 from path import path
 from datetime import datetime
+
 
 class Cpxoview(Gtk.VBox):
     def __init__(self, activity, deck):
@@ -57,28 +59,30 @@ class Cpxoview(Gtk.VBox):
     def set_store(self, src):
         print 'set_store', src
         store = Gtk.ListStore(str, str, str)
-        #get objects from the local datastore
+        # get objects from the local datastore
         if src == "datastore":
-            ds_objects, num_objects = datastore.find({'mime_type':['application/x-classroompresenter']})
+            ds_objects, num_objects = datastore.find(
+                {'mime_type': ['application/x-classroompresenter']})
             for f in ds_objects:
                 try:
                     object = f.object_id
-                except:
+                except BaseException:
                     print 'find object_id failed'
                 try:
                     title = f.metadata['title']
-                except:
+                except BaseException:
                     title = ""
                 try:
                     t = f.metadata['timestamp']
                     timestamp = datetime.fromtimestamp(t)
-                except:
+                except BaseException:
                     timestamp = ""
                 store.append([object, title, timestamp])
                 f.destroy()
         elif src == "activity":
-            #source is activity bundle
-            srcdir = path(activity.get_bundle_path()) / 'resources' / 'Presentations'
+            # source is activity bundle
+            srcdir = path(activity.get_bundle_path()) / \
+                'resources' / 'Presentations'
             for f in srcdir.files('*.cpxo'):
                 store.append([f.name, "", f.getctime()])
         else:
@@ -96,7 +100,7 @@ class Cpxoview(Gtk.VBox):
         object = datastore.get(model[row][0])
         fn = object.file_path
         print 'object filename', path(fn).exists(), fn
-        #open slideshow, set Navigation toolbar current
+        # open slideshow, set Navigation toolbar current
         self.activity.read_file(fn)
         for object in ds_objects:
             object.destroy()
