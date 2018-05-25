@@ -1,8 +1,7 @@
-import os
+kimport os
 
 from gi.repository import Gtk
-from gi.repository import WebKit
-from gi.repository.WebKit import WewView
+from gi.repository.WebKit2 import WebView
 
 from sugar3 import env
 from sugar3.activity import activity
