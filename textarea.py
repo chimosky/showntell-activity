@@ -52,21 +52,25 @@ class TextArea(Gtk.HBox):
 
         """
             #initialize audio record pipeline
-            player = gst.Pipeline("player")
-            #source = gst.element_factory_make("alsasrc", "alsa-source")
-            source = gst.element_factory_make("filesrc", "file-source")
+            player = Gst.Pipeline.new("player")
+            #source = Gst.ElementFactory.make("alsasrc", "alsa-source")
+            source = Gst.ElementFactory.make("filesrc", "file-source")
             player.add(source)
-            parse = gst.element_factory_make("wavparse", "parser")
+            parse = Gst.ElementFactory.make("wavparse", "parser")
             player.add(parse)
-            convert = gst.element_factory_make("audioconvert", "converter")
+            convert = Gst.ElementFactory.make("audioconvert", "converter")
             player.add(convert)
-            enc = gst.element_factory_make("vorbisenc", "vorbis-encoder")
+            enc = Gst.ElementFactory.make("vorbisenc", "vorbis-encoder")
             player.add(enc)
-            create = gst.element_factory_make("oggmux", "ogg-create")
+            create = Gst.ElementFactory.make("oggmux", "ogg-create")
             player.add(create)
-            fileout = gst.element_factory_make("filesink", "sink")
+            fileout = Gst.ElementFactory.make("filesink", "sink")
             player.add(fileout)
-            gst.element_link_many(source, parse, convert, enc, create, fileout)
+            source.link(parse) 
+            parse.link(convert)
+            convert.link(enc) 
+            enc.link(create) 
+            create.link(fileout)
             self.__player = player
             self.__source = source
             self.__fileout = fileout
@@ -125,7 +129,7 @@ class TextArea(Gtk.HBox):
             self.__deck.setSlideClip(audiofile.name, n)
             # convert to ogg file
             pipeline = self.__pipeline + audiofile
-            subprocess.call("gst-launch-0.10 " + pipeline, shell=True)
+            subprocess.call("gst-launch-1.0 " + pipeline, shell=True)
             subprocess.call("amixer cset numid=11 off", shell=True)
             # reset mic boost
             print 'mic boost off', n, self.__audiofile, path(self.__audiofile).exists()
@@ -135,7 +139,7 @@ class TextArea(Gtk.HBox):
             subprocess.call("amixer cset numid=11 on", shell=True)
             #self.__fileout.set_property("location", self.__audiofile)
             #self.__source.set_property("location", AUDIOPATH)
-            # self.__player.set_state(gst.STATE_PLAYING)
+            # self.__player.set_state(Gst.State.PLAYING)
             print 'recording started'
             self.__pid = subprocess.Popen(
                 "arecord -f cd " + AUDIOPATH, shell=True)
@@ -147,12 +151,12 @@ class TextArea(Gtk.HBox):
             clip = self.__deck.getSlideClip()
             print 'play clip:', clip
             if clip:
-                cmd = "gst-launch-0.10 filesrc location=" + clip
+                cmd = "gst-launch-1.0 filesrc location=" + clip
                 cmd = cmd + " ! decodebin ! audioconvert ! alsasink"
                 self.__pid = subprocess.Popen(cmd, shell=True)
         else:
             # we are playing and need to stop
-            subprocess.call("killall -q gst-launch-0.10", shell=True)
+            subprocess.call("killall -q gst-launch-1.0", shell=True)
 
     # Create buttons for audio controls
     def create_bbox(
