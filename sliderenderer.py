@@ -20,7 +20,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 import gi
-gi.require_version('WebKit', '3.0')
+gi.require_version('WebKit2', '4.0')
 
 import cairo
 import os
@@ -34,7 +34,7 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Rsvg
 from gi.repository import GdkPixbuf
-from gi.repository.WebKit import WebView
+from gi.repository.WebKit2 import WebView
 
 #hulahop.startup(os.path.join(env.get_profile_path(), 'gecko'))
 
