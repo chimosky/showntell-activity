@@ -66,7 +66,6 @@ class Shared(ExportedGObject):
         self.__got_dbus_tube = False
         self.__locked = False
         self.__pservice = presenceservice.get_instance()
-        # self.__owner = self.__pservice.get_owner()
 
         self.__cpxo_path = os.path.join(work_path, 'deck.cpxo')
 
@@ -112,9 +111,6 @@ class Shared(ExportedGObject):
 
         self.__conn = self.__shared_activity.telepathy_conn
         self.__my_handle = self.__conn.GetSelfHandle()
-
-        # self.__shared_activity.connect('buddy-joined', self.buddy_joined_cb)
-        # self.__shared_activity.connect('buddy-left', self.buddy_left_cb)
 
         # takes care of downloading (and then sharing) the slide deck over
         # stream tubes

@@ -38,8 +38,6 @@ class SideBar(Gtk.Notebook):
 
         self.set_show_border(False)
         self.set_show_tabs(True)
-        # self.show_tabs = True
-        # self.show_border = True
 
         self.slide_context_menu = Gtk.Menu()    # Don't need to show menus
 
@@ -87,8 +85,6 @@ class SideBar(Gtk.Notebook):
 
         sub_label = Gtk.Label("Submissions")
         self.append_page(self.__sublist, sub_label)
-
-        # self.__sublist_store.append(["My Ink", -1])
 
         self.load_thumbs()
 

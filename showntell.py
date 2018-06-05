@@ -183,7 +183,6 @@ class ShowNTell(activity.Activity):
         self.__progress_lbl = Gtk.Label("Loading slide deck...")
         self.__progress_bar = Gtk.ProgressBar()
         self.__progress_view.pack_start(self.__progress_lbl, True, False, 5)
-        # self.__progress_view.pack_start(self.__progress_bar, False, False, 5)
         self.__progress_bar.set_fraction(
             self.__progress_cur / self.__progress_max)
 

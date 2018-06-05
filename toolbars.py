@@ -231,7 +231,6 @@ class InkToolBar(Gtk.Toolbar):
         self.__red.set_icon_name('red-button')
         self.insert(self.__red, -1)
         self.__red.show()
-        # self.__red.set_tooltip('Red Ink')
         self.__red.connect('clicked', self.set_ink_color, 1.0, 0.0, 0.0, "red")
 
         # Green Ink
@@ -239,7 +238,6 @@ class InkToolBar(Gtk.Toolbar):
         self.__green.set_icon_name('green-button')
         self.insert(self.__green, -1)
         self.__green.show()
-        # self.__green.set_tooltip('Green Ink')
         self.__green.connect(
             'clicked',
             self.set_ink_color,
@@ -267,7 +265,6 @@ class InkToolBar(Gtk.Toolbar):
         self.__black.set_icon_name('black-button')
         self.insert(self.__black, -1)
         self.__black.show()
-        # self.__black.set_tooltip('Black Ink')
         self.__black.connect(
             'clicked',
             self.set_ink_color,
@@ -430,7 +427,7 @@ class MakeToolBar(Gtk.Toolbar):
                 ds_mounts[i]['title'],\
                 ds_mounts[i]['id']
             if ds_mounts[i]['uri'].find('datastore') > 0:
-                pass
+                journal = i
             else:
                 pendrive = i
 
