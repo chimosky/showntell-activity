@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # toolbars.py
 #
 # Classes defining toolbars for Classroom Presenter
@@ -19,32 +20,19 @@
 
 from sugar3.activity import activity
 from sugar3.graphics.toolbutton import ToolButton
-from sugar3.graphics.menuitem import MenuItem
-from sugar3.graphics.objectchooser import ObjectChooser
-from sugar3.datastore import datastore
 
 import logging
 import threading
-import os
-import sys
-from time import strftime
-import utils
 from path import path
-import slideshow
-import subprocess
-import listview
 
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import Pango
-from gi.repository import GObject
-#from gi.repository import WebKit
-#from gi.repository.WebKit import WebView
+# from gi.repository import WebKit
+# from gi.repository.WebKit import WebView
 
-from sugar3 import env
-
-#from hulahop.webview import WebView
+# from hulahop.webview import WebView
 
 DATASTORE = '/home/olpc/.sugar/default/datastore/store'
 
@@ -53,10 +41,12 @@ def get_mounts():
     volume_monitor = Gio.VolumeMonitor.get()
 
     mounts = []
-    for volume in volume_monitor.get_volumes(
-    ):  # Get all volumes (mounted and no mounted)
+    # Get all volumes (mounted and not mounted)
+    for volume in volume_monitor.get_volumes():
 
-        print "GETTING VOLUMES", volume.get_name(), volume.get_identifier("uuid")
+        print "GETTING VOLUMES",\
+            volume.get_name(),\
+            volume.get_identifier("uuid")
 
         if not volume.get_mount():  # Is not mounted
             continue
@@ -241,7 +231,7 @@ class InkToolBar(Gtk.Toolbar):
         self.__red.set_icon_name('red-button')
         self.insert(self.__red, -1)
         self.__red.show()
-        #self.__red.set_tooltip('Red Ink')
+        # self.__red.set_tooltip('Red Ink')
         self.__red.connect('clicked', self.set_ink_color, 1.0, 0.0, 0.0, "red")
 
         # Green Ink
@@ -249,7 +239,7 @@ class InkToolBar(Gtk.Toolbar):
         self.__green.set_icon_name('green-button')
         self.insert(self.__green, -1)
         self.__green.show()
-        #self.__green.set_tooltip('Green Ink')
+        # self.__green.set_tooltip('Green Ink')
         self.__green.connect(
             'clicked',
             self.set_ink_color,
@@ -263,7 +253,7 @@ class InkToolBar(Gtk.Toolbar):
         self.__blue.set_icon_name('blue-button')
         self.insert(self.__blue, -1)
         self.__blue.show()
-        #self.__blue.set_tooltip('Blue Ink')
+        # self.__blue.set_tooltip('Blue Ink')
         self.__blue.connect(
             'clicked',
             self.set_ink_color,
@@ -277,7 +267,7 @@ class InkToolBar(Gtk.Toolbar):
         self.__black.set_icon_name('black-button')
         self.insert(self.__black, -1)
         self.__black.show()
-        #self.__black.set_tooltip('Black Ink')
+        # self.__black.set_tooltip('Black Ink')
         self.__black.connect(
             'clicked',
             self.set_ink_color,
@@ -436,17 +426,13 @@ class MakeToolBar(Gtk.Toolbar):
         ds_mounts = get_mounts()
         pendrive = -1
         for i in range(0, len(ds_mounts), 1):
-            print 'mount', i, ds_mounts[i]['uri'], ds_mounts[i]['title'], ds_mounts[i]['id']
+            print 'mount', i, ds_mounts[i]['uri'], \
+                ds_mounts[i]['title'],\
+                ds_mounts[i]['id']
             if ds_mounts[i]['uri'].find('datastore') > 0:
-                journal = i
+                pass
             else:
                 pendrive = i
-
-        #self.__newbtn = ToolButton('new-transparency')
-        #self.__newbtn.set_tooltip("New slideshow")
-        #self.__newbtn.connect('clicked', self.new)
-        #self.insert(self.__newbtn, -1)
-        # self.__newbtn.show()
 
         self.__openbtn = ToolButton('showntell-activity')
         self.__openbtn.set_tooltip("Choose slideshow")
@@ -454,15 +440,9 @@ class MakeToolBar(Gtk.Toolbar):
         self.insert(self.__openbtn, -1)
         self.__openbtn.show()
 
-        #self.__htmlbutton = ToolButton('new')
-        #self.__htmlbutton.set_tooltip("test tw")
-        #self.__htmlbutton.connect('clicked', self.showhtml)
-        #self.insert(self.__htmlbutton, -1)
-        # self.__htmlbutton.show()
-
         self.__journalbtn = ToolButton('activity-journal')
         self.__journalbtn.set_tooltip("Choose image")
-        #self.__journalbtn.connect('clicked', self.chooseimage, ds_mounts[journal]['id'], DATASTORE)
+        # self.__journalbtn.connect('clicked', self.chooseimage, ds_mounts[journal]['id'], DATASTORE)
         self.insert(self.__journalbtn, -1)
         self.__journalbtn.show()
 
@@ -490,7 +470,7 @@ class MakeToolBar(Gtk.Toolbar):
         self.__decktitle.set_text(title)
         self.__decktitle.set_alignment(0)
         self.__decktitle.connect('activate', self.decktitle_change_cb)
-        #self.deck.connect('decktitle_changed', self.decktitle_change_cb)
+        # self.deck.connect('decktitle_changed', self.decktitle_change_cb)
 
         self.__decktitle.set_width_chars(20)
 
@@ -524,16 +504,16 @@ class MakeToolBar(Gtk.Toolbar):
         self.insert(separator, -1)
         separator.show()
 
-        #self.__helpbtn = ToolButton('help-button')
-        #self.__helpbtn.set_tooltip("Select help presentation")
-        #self.__helpbtn.connect('clicked', self.help)
-        #self.insert(self.__helpbtn, -1)
+        # self.__helpbtn = ToolButton('help-button')
+        # self.__helpbtn.set_tooltip("Select help presentation")
+        # self.__helpbtn.connect('clicked', self.help)
+        # self.insert(self.__helpbtn, -1)
         # self.__helpbtn.show()
 
-        #self.__reloadbtn = ToolButton()
+        # self.__reloadbtn = ToolButton()
         # self.__reloadbtn.set_icon_name('green-button')
-        #self.__reloadbtn.connect('clicked', self.reload)
-        #self.insert(self.__reloadbtn, -1)
+        # self.__reloadbtn.connect('clicked', self.reload)
+        # self.insert(self.__reloadbtn, -1)
         # self.__reloadbtn.show()
 
         self.show()
@@ -570,7 +550,6 @@ class MakeToolBar(Gtk.Toolbar):
         print 'slideshow treeview model set'
 
     def help(self, widget):
-        scrn3 = self.activity.set_screen(2)
         # here select help.cpxo in resources
         fn = path(activity.get_bundle_path()) / 'resources' / 'help.cpxo'
         self.activity.read_file(fn)

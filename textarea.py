@@ -1,4 +1,5 @@
 # -*- mode:python; tab-width:4; indent-tabs-mode:t;  -*-
+# -*- coding: <uft-8> -*-
 
 # textarea.py
 #
@@ -20,17 +21,13 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import gi
-gi.require_version('Gst', '1.0')
-import os
-import time
+
 from path import path
 import logging
 import subprocess
 from sugar3.activity import activity
 
 from gi.repository import Gtk
-from gi.repository import Gst
 
 AUDIOPATH = path(activity.get_activity_root()) / 'data' / 'temp.wav'
 
@@ -50,32 +47,6 @@ class TextArea(Gtk.HBox):
         self.__text_area.connect('changed', self.text_changed)
         self.__logger.debug("Constructed")
 
-        """
-            #initialize audio record pipeline
-            player = Gst.Pipeline.new("player")
-            #source = Gst.ElementFactory.make("alsasrc", "alsa-source")
-            source = Gst.ElementFactory.make("filesrc", "file-source")
-            player.add(source)
-            parse = Gst.ElementFactory.make("wavparse", "parser")
-            player.add(parse)
-            convert = Gst.ElementFactory.make("audioconvert", "converter")
-            player.add(convert)
-            enc = Gst.ElementFactory.make("vorbisenc", "vorbis-encoder")
-            player.add(enc)
-            create = Gst.ElementFactory.make("oggmux", "ogg-create")
-            player.add(create)
-            fileout = Gst.ElementFactory.make("filesink", "sink")
-            player.add(fileout)
-            source.link(parse) 
-            parse.link(convert)
-            convert.link(enc) 
-            enc.link(create) 
-            create.link(fileout)
-            self.__player = player
-            self.__source = source
-            self.__fileout = fileout
-            """
-
         # initialize convert pipeline
         p = "filesrc location=" + AUDIOPATH + " ! wavparse "
         p = p + "! audioconvert ! vorbisenc ! oggmux "
@@ -85,7 +56,8 @@ class TextArea(Gtk.HBox):
     def update_text(self, widget):
         selfink, text = self.__deck.getSelfInkOrSubmission()
         self.__text_area.set_text(text)
-        if self.__deck.getActiveSubmission() == -1 and not self.__deck.getIsInitiating():
+        if self.__deck.getActiveSubmission() == -1 and \
+                not self.__deck.getIsInitiating():
             self.__text_area.set_sensitive(True)
         else:
             self.__text_area.set_sensitive(False)
@@ -132,14 +104,12 @@ class TextArea(Gtk.HBox):
             subprocess.call("gst-launch-1.0 " + pipeline, shell=True)
             subprocess.call("amixer cset numid=11 off", shell=True)
             # reset mic boost
-            print 'mic boost off', n, self.__audiofile, path(self.__audiofile).exists()
+            print 'mic boost off', n, self.__audiofile,
+            print path(self.__audiofile).exists()
         else:
             # turn on mic boost (xo)
             print 'turn on mic boost'
             subprocess.call("amixer cset numid=11 on", shell=True)
-            #self.__fileout.set_property("location", self.__audiofile)
-            #self.__source.set_property("location", AUDIOPATH)
-            # self.__player.set_state(Gst.State.PLAYING)
             print 'recording started'
             self.__pid = subprocess.Popen(
                 "arecord -f cd " + AUDIOPATH, shell=True)

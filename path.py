@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """ path.py - An object representing a path to a file or directory.
 
 Example:
@@ -11,7 +13,8 @@ This module requires Python 2.2 or later.
 
 
 URL:     http://www.jorendorff.com/articles/python/path
-Author:  Jason Orendorff <jason.orendorff\x40gmail\x2ecom> (and others - see the url!)
+Author:  Jason Orendorff <jason.orendorff\x40gmail\x2ecom> \
+         (and others - see the url!)
 Date:    9 Mar 2007
 """
 
@@ -174,7 +177,8 @@ class path(_base):
         dirname, None, None,
         """ This path's parent directory, as a new path object.
 
-        For example, path('/usr/local/lib/libpython.so').parent == path('/usr/local/lib')
+        For example, \
+        path('/usr/local/lib/libpython.so').parent == path('/usr/local/lib')
         """)
 
     name = property(
@@ -188,8 +192,9 @@ class path(_base):
         _get_namebase, None, None,
         """ The same as path.name, but with one file extension stripped off.
 
-        For example, path('/home/guido/python.tar.gz').name     == 'python.tar.gz',
-        but          path('/home/guido/python.tar.gz').namebase == 'python.tar'
+        For example,\
+        path('/home/guido/python.tar.gz').name     == 'python.tar.gz',but\
+        path('/home/guido/python.tar.gz').namebase == 'python.tar'
         """)
 
     ext = property(

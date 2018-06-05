@@ -1,4 +1,5 @@
 # -*- mode:python; tab-width:4; indent-tabs-mode:nil;  -*-
+# -*- coding: utf-8 -*-
 
 # sharedslides.py
 #
@@ -20,22 +21,15 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 import logging
-
-import sys
-import os
 import time
 import random
 
 from gi.repository import GObject
 from gi.repository import TelepathyGLib
 
-import dbus
-from dbus.service import method, signal
-from dbus.gobject_service import ExportedGObject
-
-from sugar3.presence import presenceservice
 from sugar3 import network
-from sugar3.presence.tubeconn import TubeConnection
+
+import dbus
 
 SERVICE = "edu.washington.cs.ClassroomPresenterXO"
 IFACE = SERVICE
@@ -59,7 +53,10 @@ class SharedSlides(GObject.GObject):
     """ Handles all sharing of slides and ink """
 
     __gsignals__ = {
-        'deck-download-complete': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
+        'deck-download-complete': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            ()),
     }
 
     def __init__(self, init, cpxo_path, shared_activity, read_file_cb):
@@ -72,7 +69,8 @@ class SharedSlides(GObject.GObject):
         self.__logger = logging.getLogger('SharedSlides')
 
         self.__tubes_chan = self.__shared_activity.telepathy_tubes_chan
-        self.__iface = self.__tubes_chan[TelepathyGLib.IFACE_CHANNEL_TYPE_TUBES]
+        self.__iface = self.__tubes_chan\
+            [TelepathyGLib.IFACE_CHANNEL_TYPE_TUBES]
 
         if (self.__is_initiating):
             self.__logger.debug('Hello from SharedSlides (sharer).')
@@ -86,13 +84,17 @@ class SharedSlides(GObject.GObject):
             self.get_stream_tube()
 
     def get_stream_tube(self):
-        """ Attempts to download the slide deck from an available stream tube """
+        """
+        Attempts to download the slide deck from an available stream tube
+        """
         self.__iface.ListTubes(
             reply_handler=self.list_tubes_reply_cb,
             error_handler=self.list_tubes_error_cb)
 
     def handle_download_fail(self):
-        """ If an attempt to download the deck fails, this method takes care of it """
+        """
+        If an attempt to download the deck fails, this method takes care of it
+        """
         self.__logger.error(
             'Download failed! Sleeping five seconds and trying again.')
         time.sleep(5)
@@ -164,8 +166,7 @@ class SharedSlides(GObject.GObject):
         self.read_file_cb(self.__cpxo_path)
 
     def download_progress_cb(self, getter, bytes_downloaded, tube_id):
-        tmp = True
-        #self.__logger.debug("Bytes downloaded from tube %u: %u", tube_id, bytes_downloaded)
+        self.__logger.debug("Bytes downloaded from tube %u: %u", tube_id, bytes_downloaded)
 
     def download_error_cb(self, getter, err, tube_id):
         self.__logger.error('Download failed on tube %u: %s', tube_id, err)

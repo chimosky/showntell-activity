@@ -9,9 +9,6 @@
 # website: zetcode.com
 # last edited: February 2009
 
-import sys
-import os
-
 from gi.repository import Gtk
 
 from sugar3.datastore import datastore
@@ -62,8 +59,10 @@ class Listview(Gtk.VBox):
         print 'set_store', mountpoint, pth
         store = Gtk.ListStore(str, str, str, str)
         # get objects from the local datastore
-        ds_objects, num_objects = datastore.find({'mountpoints': [mountpoint], 'mime_type': [
-                                                 'image/jpg', 'image/png', 'image/svg', 'image/jpeg']})
+        ds_objects, num_objects = datastore.find({
+            'mountpoints': [mountpoint], 'mime_type':
+            ['image/jpg', 'image/png', 'image/svg', 'image/jpeg']}
+            )
         for f in ds_objects:
             try:
                 object = f.object_id
@@ -91,9 +90,6 @@ class Listview(Gtk.VBox):
 
         model = widget.get_model()
         print 'row', model[row][0], model[row][1], model[row][2], model[row][3]
-        title = model[row][1]
-        mime_type = model[row][2]
-        timestamp = model[row][3]
         object = datastore.get(model[row][0])
         fn = object.file_path
         print 'object filename', path(fn).exists(), fn

@@ -21,13 +21,11 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 import os
-import sys
 import subprocess
 from time import strftime
 import xml.dom.minidom
 import logging
 
-from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import GdkPixbuf
 
@@ -39,21 +37,61 @@ from sugar3.datastore import datastore
 class Deck(GObject.GObject):
 
     __gsignals__ = {
-        'slide-changed': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
-        'decktitle-changed': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
-        'slide-redraw': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
-        'remove-path': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_INT,)),
-        'deck-changed': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
-        'local-ink-added': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_STRING,)),
-        'remote-ink-added': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_STRING,)),
-        'instr-state-propagate': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_BOOLEAN,)),
-        'lock-state-propagate': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_BOOLEAN,)),
-        'ink-submitted': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_STRING, GObject.TYPE_STRING)),
-        'ink-broadcast': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE,
-                          (GObject.TYPE_STRING, GObject.TYPE_STRING, GObject.TYPE_STRING)),
-        'update-submissions': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_INT,)),
-        'instructor-ink-cleared': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_INT,)),
-        'instructor-ink-removed': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_INT, GObject.TYPE_INT)),
+        'slide-changed': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            ()),
+        'decktitle-changed': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            ()),
+        'slide-redraw': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE, ()),
+        'remove-path': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            (GObject.TYPE_INT,)),
+        'deck-changed': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            ()),
+        'local-ink-added': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            (GObject.TYPE_STRING,)),
+        'remote-ink-added': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            (GObject.TYPE_STRING,)),
+        'instr-state-propagate': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            (GObject.TYPE_BOOLEAN,)),
+        'lock-state-propagate': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            (GObject.TYPE_BOOLEAN,)),
+        'ink-submitted': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            (GObject.TYPE_STRING, GObject.TYPE_STRING)),
+        'ink-broadcast': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            (GObject.TYPE_STRING, GObject.TYPE_STRING, GObject.TYPE_STRING)),
+        'update-submissions': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            (GObject.TYPE_INT,)),
+        'instructor-ink-cleared': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            (GObject.TYPE_INT,)),
+        'instructor-ink-removed': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            (GObject.TYPE_INT, GObject.TYPE_INT)),
     }
 
     def __init__(self, sugaractivity, handle, rsrc, base="/nfs/show"):
@@ -196,7 +234,6 @@ class Deck(GObject.GObject):
     def resizeImage(self, inpath, outpath, w, h):
         # resize an image
         pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(inpath, w, h)
-        #scaled_buf = pixbuf.scale.simple(w, h, Gtk.gdk.INTERP_BILINEAR)
         pixbuf.save(outpath, "png")
 
     def get_SlideTitle(self):
@@ -346,8 +383,12 @@ class Deck(GObject.GObject):
             self.emit('update-submissions', len(subs) - 1)
 
     def addInkToSlide(self, pathstr, islocal, n=None):
-        """Adds ink to the current slide, or slide n if given.  Instructor ink may be added to any slide;
-        but it only makes sense to add student ink to the current slide (n will be ignored)"""
+        """
+        Adds ink to the current slide, or slide n if given.
+        Instructor ink may be added to any slide;
+        but it only makes sense to add student ink to the
+        current slide (n will be ignored)
+        """
         if n is None:
             slide = self.__slide
             instr_tag = self.__instructor_tag
@@ -427,7 +468,7 @@ class Deck(GObject.GObject):
                 path_uid = 0
                 try:
                     path_uid = int(pathstr[0:pathstr.find(';')])
-                except Exception as e:
+                except BaseException:
                     pass
                 if path_uid == uid:
                     instructor_tag.removeChild(path_tag)
@@ -455,7 +496,7 @@ class Deck(GObject.GObject):
                 path_uid = 0
                 try:
                     path_uid = int(pathstr[0:pathstr.find(';')])
-                except Exception as e:
+                except BaseException:
                     pass
                 if path_uid == uid:
                     tag.removeChild(path_tag)
@@ -494,7 +535,6 @@ class Deck(GObject.GObject):
                 if len(texts) > 0:
                     if texts[0].firstChild:
                         text = texts[0].firstChild.nodeValue
-                pathlist = []
                 paths = active_subtag.getElementsByTagName("path")
                 for path in paths:
                     if path.firstChild:
@@ -502,7 +542,10 @@ class Deck(GObject.GObject):
             return sub, text, whofrom
 
     def getSlideThumb(self, n=-1):
-        """Returns the full path to the thumbnail for this slide if it is defined; otherwise False"""
+        """
+        Returns the full path to the thumbnail for this slide
+        if it is defined; otherwise False
+        """
         if n == -1:
             n = self.__pos
         slide = self.__slides[n]
@@ -513,7 +556,9 @@ class Deck(GObject.GObject):
         return os.path.join(self.__base, thumbs[0].firstChild.nodeValue)
 
     def setSlideThumb(self, filename, n=-1):
-        """Sets the thumbnail for this slide to filename (provide a *relative* path!)"""
+        """
+        Sets the thumbnail for this slide to filename (provide a *relative* path!)
+        """
         if n == -1:
             n = self.__pos
         slide = self.__slides[n]
@@ -525,7 +570,10 @@ class Deck(GObject.GObject):
         slide.appendChild(thumb)
 
     def getSlideClip(self, n=-1):
-        """Returns the full path to the audio clip for this slide if it is defined; otherwise False"""
+        """
+        Returns the full path to the audio clip for this slide
+        if it is defined; otherwise False
+        """
         if n == -1:
             n = self.__pos
         slide = self.__slides[n]
@@ -535,7 +583,9 @@ class Deck(GObject.GObject):
         return os.path.join(self.__base, clip[0].firstChild.nodeValue)
 
     def setSlideClip(self, filename, n=-1):
-        """Sets the clip for this slide to filename (provide a *relative* path!)"""
+        """
+        Sets the clip for this slide to filename (provide a *relative* path!)
+        """
         if n == -1:
             n = self.__pos
         slide = self.__slides[n]
@@ -595,7 +645,9 @@ class Deck(GObject.GObject):
         self.emit("slide-redraw")
 
     def goToIndex(self, index, is_local):
-        """Jumps to the slide at the given index, if it's valid"""
+        """
+        Jumps to the slide at the given index, if it's valid.
+        """
         self.__logger.debug(
             "Trying to change slides: locked? %u, instructor? %u, is_local? %u",
             self.__nav_locked,
@@ -604,7 +656,8 @@ class Deck(GObject.GObject):
 
         in_range = index < self.__nslides and index >= 0
 
-        if (self.__is_initiating or not is_local or not self.__nav_locked) and in_range:
+        if (self.__is_initiating or not is_local or not self.__nav_locked)\
+                and in_range:
             self.__logger.debug("Changing slide to index: %u", index)
             self.__pos = index
             self.doNewIndex()
@@ -645,7 +698,10 @@ class Deck(GObject.GObject):
             return False
 
     def getSlideDimensionsFromXML(self, n=-1):
-        """Returns the dimensions for the slide at index n, if they're specified"""
+        """
+        Returns the dimensions for the slide at index n,
+        if they're specified.
+        """
         if n == -1:
             n = self.__pos
         slide = self.__slides[n]

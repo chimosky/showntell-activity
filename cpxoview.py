@@ -9,9 +9,6 @@
 # website: zetcode.com
 # last edited: February 2009
 
-import sys
-import os
-
 from gi.repository import Gtk
 
 from sugar3.activity import activity
@@ -61,9 +58,9 @@ class Cpxoview(Gtk.VBox):
         store = Gtk.ListStore(str, str, str)
         # get objects from the local datastore
         if src == "datastore":
-            ds_objects, num_objects = datastore.find(
+            self.ds_objects, num_objects = datastore.find(
                 {'mime_type': ['application/x-classroompresenter']})
-            for f in ds_objects:
+            for f in self.ds_objects:
                 try:
                     object = f.object_id
                 except BaseException:
@@ -95,13 +92,11 @@ class Cpxoview(Gtk.VBox):
         print 'cpxo on_activated'
         model = widget.get_model()
         print 'row', model[row][0], model[row][1], model[row][2]
-        title = model[row][1]
-        timestamp = model[row][2]
         object = datastore.get(model[row][0])
         fn = object.file_path
         print 'object filename', path(fn).exists(), fn
         # open slideshow, set Navigation toolbar current
         self.activity.read_file(fn)
-        for object in ds_objects:
+        for object in self.ds_objects:
             object.destroy()
         self.activity.set_screen(0)
