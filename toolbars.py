@@ -462,7 +462,7 @@ class MakeToolBar(Gtk.Toolbar):
 
         self.__journalbtn = ToolButton('activity-journal')
         self.__journalbtn.set_tooltip("Choose image")
-        #self.__journalbtn.connect('clicked', self.chooseimage, ds_mounts[journal]['id'], DATASTORE)
+        self.__journalbtn.connect('clicked', self.chooseimage, ds_mounts[journal]['id'], DATASTORE)
         self.insert(self.__journalbtn, -1)
         self.__journalbtn.show()
 
