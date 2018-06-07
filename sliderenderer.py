@@ -36,7 +36,7 @@ class Renderer(object):
     def __init__(self, activity, deck):
         """Constructs a new SlideRenderer that will render slides from deck"""
         self.__logger = logging.getLogger('Renderer')
-        self.__logger.setLevel('error')
+        #self.__logger.setLevel('error')
         self.__deck = deck
         self.__activity = activity
         self.__wv = WebView()
@@ -47,7 +47,10 @@ class Renderer(object):
         """Returns the [width, height] of the first slide layer"""
         if n is None:
             n = self.__deck.getIndex()
-        layers = self.__deck.getSlideLayers(n)
+        try:
+            layers = self.__deck.getSlideLayers(n)
+        except:
+            layers=[]
         
         # return some default reasonable value if this is an empty slide
         if len(layers) == 0:
@@ -106,7 +109,6 @@ class Renderer(object):
         targh = float(surface.get_height())
         x_scale = targw/srcw
         y_scale = targh/srch
-        print 'rendering slide', str(n), "w=", targw, srcw, x_scale, "h=", targh, srch, y_scale
         
         self.__logger.debug("Surface is " + str(targw) +  "x" + str(targh)) 
         
@@ -131,9 +133,7 @@ class Renderer(object):
         self.__logger.debug("Got layers at " + str(time.time() - timerstart))
         for layer in layers:
             type = utils.getFileType(layer)
-            print 'Drawing layer ', type, layer
             self.__logger.debug("Drawing layer " + str(layer) +" " + str(scale) + " at "  + str(time.time() - timerstart))
-            print 'drawing layer', type, str(layer)
             if type == "svg":
                 f = open(layer, "rb")
                 svg_data = f.read()
@@ -154,7 +154,6 @@ class Renderer(object):
                 ctx.fill()
             elif type == "html":
                 #use hulahop to display
-                print 'html slide', self.__htmlflag, layer
                 scrn4 = self.__activity.set_screen(3)
                 if self.__htmlflag:
                     scrn4.add(self.__wv)

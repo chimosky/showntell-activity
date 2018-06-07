@@ -18,7 +18,6 @@ from datetime import datetime
 
 class Cpxoview(gtk.VBox):
     def __init__(self, activity, deck):
-        print 'cpxoview init'
         self.activity = activity
         gtk.VBox.__init__(self)
         vbox = gtk.VBox(False, 8)
@@ -52,7 +51,6 @@ class Cpxoview(gtk.VBox):
         return self.treeView
 
     def set_store(self, src):
-        print 'set_store', src
         store = gtk.ListStore(str, str, str)
         #get objects from the local datastore
         if src == "datastore":
@@ -80,21 +78,16 @@ class Cpxoview(gtk.VBox):
                 store.append([f.name, "", f.getctime()])
         else:
             print 'error in src', src
-        print 'return cpxo store'
         return store
 
     def on_activated(self, widget, row, col):
 
-        print 'cpxo on_activated'
         model = widget.get_model()
-        print 'row', model[row][0], model[row][1], model[row][2]
         title = model[row][1]
         timestamp = model[row][2]
         object = datastore.get(model[row][0])
         fn = object.file_path
-        print 'object filename', path(fn).exists(), fn
         #open slideshow, set Navigation toolbar current
         self.activity.read_file(fn)
-        for object in ds_objects:
-            object.destroy()
+        object.destroy()
         self.activity.set_screen(0)

@@ -102,20 +102,38 @@ class NavToolBar(gtk.Toolbar):
 
         self.insert(self.__total_page_item, -1)
         self.__total_page_item.show()
-        
-        # separator between navigation buttons and lock button
+
+        # separator between navigation buttons and deck title
         separator = gtk.SeparatorToolItem()
         separator.set_draw(False)
         separator.set_expand(True)
         self.insert(separator, -1)
         separator.show()
 
+        #deck title
+        self.__title_item = gtk.ToolItem()
+        self.title = gtk.Label()
+        self.title.set_text(self.__deck.get_title())
+        self.title.set_width_chars(20)
+        self.title.set_alignment(0,1)
+        self.__title_item.add(self.title)
+        self.title.show()
+        self.insert(self.__title_item,-1)
+        self.__title_item.show()
+
+        # separator between deck title  and lock button
+        separator = gtk.SeparatorToolItem()
+        separator.set_draw(False)
+        separator.set_expand(True)
+        self.insert(separator -1)
+        separator.show()
+        
         # unlocked button
         self.__unlockBtn = ToolButton('unlocked')
         self.__unlockBtn.set_tooltip("Student Navigation Unlocked")
 
         # navigation is unlocked by default, so insert the unlock button
-        self.insert(self.__unlockBtn, 5)
+        self.insert(self.__unlockBtn, 7)
         self.__unlockBtn.show()
         
         # locked button
@@ -133,6 +151,7 @@ class NavToolBar(gtk.Toolbar):
         self.slide_changed(self.__deck)
         self.show()
         
+
     def activity_shared_cb(self, widget):
         #Callback for when the activity is shared
         # bind the lock button click with switching lock mode
@@ -385,24 +404,10 @@ class InkToolBar(gtk.Toolbar):
 
 class MakeToolBar(gtk.Toolbar):
 
-    def __init__(self, this_activity, deck):
+    def __init__(self, activity, deck):
         gtk.Toolbar.__init__(self)
-        self.activity = this_activity
+        self.activity = activity
         self.deck = deck
-
-        #get mount points
-        ds_mounts = datastore.mounts()
-        journal = 0
-        if len(ds_mounts) > 1:
-            pendrive = 1
-        else:
-            pendrive = -1     
-        
-        #self.__newbtn = ToolButton('new-transparency')
-        #self.__newbtn.set_tooltip("New slideshow")
-        #self.__newbtn.connect('clicked', self.new)
-        #self.insert(self.__newbtn, -1)
-        #self.__newbtn.show()
 
         self.__openbtn = ToolButton('showntell-activity')
         self.__openbtn.set_tooltip("Choose slideshow")
@@ -410,130 +415,60 @@ class MakeToolBar(gtk.Toolbar):
         self.insert(self.__openbtn, -1)
         self.__openbtn.show()
         
-        #self.__htmlbutton = ToolButton('new')
-        #self.__htmlbutton.set_tooltip("test tw")
-        #self.__htmlbutton.connect('clicked', self.showhtml)
-        #self.insert(self.__htmlbutton, -1)
-        #self.__htmlbutton.show()
-
         self.__journalbtn = ToolButton('activity-journal')
         self.__journalbtn.set_tooltip("Choose image")
-        self.__journalbtn.connect('clicked', self.chooseimage, ds_mounts[journal]['id'], DATASTORE)
+        dsmounts = datastore.mounts()
+        self.__journalbtn.connect('clicked', self.chooseimage, ds_mounts[0]['id'], DATASTORE)
         self.insert(self.__journalbtn, -1)
         self.__journalbtn.show()
         
-        #show pendrive button only if pendrive is mounted
-        if pendrive > -1:
-            self.__pendrivebutton = ToolButton('media-flash-usb')
-            self.__pendrivebutton.set_tooltip("Choose image")
-            self.__pendrivebutton.connect('clicked', self.chooseimage, ds_mounts[pendrive]['id'], ds_mounts[pendrive]['title'])
-            self.insert(self.__pendrivebutton, -1)
-            self.__pendrivebutton.show()
-
         # deck title display and edit
         self.__decktitle_item = gtk.ToolItem()
-
-        self.__decktitle = gtk.Entry()
-        try:
-            title = self.deck.get_title()
-        except:
-            title = ""
-        print 'self.__decktitle.set_text', title
-        self.__decktitle.set_text(title)
-        self.__decktitle.set_alignment(0)
-        self.__decktitle.connect('activate', self.decktitle_change_cb)
-        #self.deck.connect('decktitle_changed', self.decktitle_change_cb)
-
-        self.__decktitle.set_width_chars(20)
-
-        self.__decktitle_item.add(self.__decktitle)
-        self.__decktitle.show()
-
-        self.insert(self.__decktitle_item, -1)
+        self.decktitle = gtk.Entry()
+        self.decktitle.set_text(self.deck.get_title())      
+        self.decktitle.connect('focus_out_event',self.decktitle_change_cb)
+        self.decktitle.set_alignment(0)
+        self.decktitle.set_width_chars(20)
+        self.__decktitle_item.add(self.decktitle)
+        self.decktitle.show()
+        self.insert(self.__decktitle_item,-1)
         self.__decktitle_item.show()
 
         # slide title display and edit
         self.__slidetitle_item = gtk.ToolItem()
-
         self.__slidetitle = gtk.Entry()
         self.__slidetitle.set_text("Slide 0")
         self.__slidetitle.set_alignment(0)
         self.__slidetitle.connect('activate', self.slidetitle_change_cb)
         self.deck.connect('slide-redraw', self.slidetitle_changed_cb)
-
         self.__slidetitle.set_width_chars(20)
-
         self.__slidetitle_item.add(self.__slidetitle)
         self.__slidetitle.show()
-
         self.insert(self.__slidetitle_item, -1)
         self.__slidetitle_item.show()
 
-        # separator between presentation buttons and help button
-        separator = gtk.SeparatorToolItem()
-        separator.set_draw(False)
-        separator.set_expand(True)
-        self.insert(separator, -1)
-        separator.show()
-
-        #self.__helpbtn = ToolButton('help-button')
-        #self.__helpbtn.set_tooltip("Select help presentation")
-        #self.__helpbtn.connect('clicked', self.help)
-        #self.insert(self.__helpbtn, -1)
-        #self.__helpbtn.show()
-
-        self.__reloadbtn = ToolButton()
-        self.__reloadbtn.set_icon_name('green-button')
-        self.__relaodbtn.connect('clicked', self.reload)
-        self.insert(self.__reloadbtn, -1)
-        self.reloadbtn.show()
-
         self.show()
 
-    def decktitle_change_cb(self, widget):
+    def decktitle_change_cb(self, widget, event):
         self.deck.set_title(self.__decktitle.get_text())
-
-    def decktitle_set_new(self, title):
-        self.__decktitle.set_text(title)
+        self.activity.navTB.title.set_text(self.deck.get_title())
 
     def slidetitle_change_cb(self, widget):
-        self.deck.set_SlideTitle(self.__slidetitle.get_text())
+        #change the title of this slide
+        n=self.deck.getIndex()
+        self.deck.set_SlideTitle(n, self.__slidetitle.get_text())
 
     def slidetitle_changed_cb(self, widget):
-        self.__slidetitle.set_text(self.deck.get_SlideTitle())
-
-    def new(self, widget):
-        print 'New slideshow'
-        #no effect if slideshow is already 'new', e.g. when ShowNTell is opened
-        #directly not by read_file
-        #this needs to be changed to show slideshow with html title slide
-        self.activity.read_file(path(activity.get_bundle_path()) / 'resources' / 'new.cpxo')
+        #display title of current slide
+        n=self.deck.getIndex()
+        self.__slidetitle.set_text(self.deck.get_SlideTitle(n))
 
     def open(self, widget):
-        print 'Open slideshow'
         scrn3 = self.activity.set_screen(2)
         treeview = scrn3.get_treeView()
-        print 'set_cpxo_store'
         treeview.set_model(scrn3.set_store("datastore"))
-        print 'slideshow treeview model set'
-
-    def help(self, widget):
-        scrn3 = self.activity.set_screen(2)
-        #here select help.cpxo in resources
-        fn = path(activity.get_bundle_path()) / 'resources' / 'help.cpxo'
-        self.activity.read_file(fn)
 
     def chooseimage(self, widget, source, pth):
         scrn2 = self.activity.set_screen(1)
         treeview = scrn2.get_treeView()
         treeview.set_model(scrn2.set_store(source, pth))
-
-    def reload(self, widget):
-        self.deck.reload()
-
-    def showhtml(self, widget):
-        self.activity.set_screen(4)
-        #intended to show listview of available html templates/slides
-        #future feature, not implemented
-       
-        

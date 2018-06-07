@@ -165,7 +165,7 @@ class SideBar(gtk.Notebook):
             self.__deck.save()
             self.__deck.reload()
         else:
-		    self.__deck.goToIndex(n, is_local=True)
+            self.__deck.goToIndex(n, is_local=True)
 
     def moveslide(self, params):
             self.movemode=True
