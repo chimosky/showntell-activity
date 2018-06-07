@@ -63,6 +63,7 @@ class Shared(ExportedGObject):
         #self.__owner = self.__pservice.get_owner()
 
         self.__cpxo_path = os.path.join(work_path, 'deck.cpxo')
+        print 'cpxo_path', self.__cpxo_path
 
         self.__activity.connect('shared', self.shared_cb)
         self.__activity.connect('joined', self.joined_cb)

@@ -156,6 +156,17 @@ class ShowNTell(activity.Activity):
         self.__progress_bar.set_fraction(self.__progress_cur / self.__progress_max)
 
         self.__shared.connect('deck-download-complete', self.dl_complete_cb)
+        
+        #if launched by Learn, set up deck
+        pth = path('/tmp/showntell')
+        if pth.exists():
+            #open slideshow, set Navigation toolbar current
+            fin = open(pth, 'r')
+            fn = fin.read()
+            fin.close()
+            self.read_file(fn)
+            self.set_screen(0)
+            subprocess.call('rm -rf ' + pth,shell=True)
 
     def dl_complete_cb(self, widget):
         self.do_slideview_mode()
