@@ -51,7 +51,7 @@ class Path:
                     pparts = pointstr.split(',')
                     if len(pparts) == 2:
                         self.add((int(pparts[0]), int(pparts[1])))
-            except Exception as e:
+            except BaseException:
                 self.__logger.debug(
                     'Could not unserialize ink string (old ink?)')
 

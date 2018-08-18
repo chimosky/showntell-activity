@@ -1,4 +1,5 @@
 # -*- mode:python; tab-width:4; indent-tabs-mode:t;  -*-
+# -*- coding: utf-8 -*-
 
 # textarea.py
 #
@@ -22,15 +23,13 @@
 
 import gi
 gi.require_version('Gst', '1.0')
-import os
-import time
 from path import path
 import logging
 import subprocess
 from sugar3.activity import activity
 
 from gi.repository import Gtk
-from gi.repository import Gst
+# from gi.repository import Gst
 
 AUDIOPATH = path(activity.get_activity_root()) / 'data' / 'temp.wav'
 
@@ -85,7 +84,8 @@ class TextArea(Gtk.HBox):
     def update_text(self, widget):
         selfink, text = self.__deck.getSelfInkOrSubmission()
         self.__text_area.set_text(text)
-        if self.__deck.getActiveSubmission() == -1 and not self.__deck.getIsInitiating():
+        if self.__deck.getActiveSubmission() == -1 and\
+                not self.__deck.getIsInitiating():
             self.__text_area.set_sensitive(True)
         else:
             self.__text_area.set_sensitive(False)
@@ -132,14 +132,12 @@ class TextArea(Gtk.HBox):
             subprocess.call("gst-launch-1.0 " + pipeline, shell=True)
             subprocess.call("amixer cset numid=11 off", shell=True)
             # reset mic boost
-            print 'mic boost off', n, self.__audiofile, path(self.__audiofile).exists()
+            print 'mic boost off', n, self.__audiofile,\
+                path(self.__audiofile).exists()
         else:
             # turn on mic boost (xo)
             print 'turn on mic boost'
             subprocess.call("amixer cset numid=11 on", shell=True)
-            #self.__fileout.set_property("location", self.__audiofile)
-            #self.__source.set_property("location", AUDIOPATH)
-            # self.__player.set_state(Gst.State.PLAYING)
             print 'recording started'
             self.__pid = subprocess.Popen(
                 "arecord -f cd " + AUDIOPATH, shell=True)

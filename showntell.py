@@ -23,7 +23,6 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 from sugar3.activity import activity
-from sugar3.datastore import datastore
 
 from sugar3.graphics.toolbarbox import ToolbarBox
 from sugar3.graphics.toolbarbox import ToolbarButton
@@ -33,11 +32,7 @@ from sugar3.activity.widgets import StopButton
 
 import logging
 
-import sys
 import os
-import subprocess
-import atexit
-import signal
 import zipfile
 
 from gi.repository import Gtk
@@ -48,22 +43,11 @@ import sliderenderer
 import slideshow
 import textarea
 import toolbars
-import utils
 import shared
-import time
-import pdb
 from path import path
 
 import listview
 import cpxoview
-
-#import hulahop
-from sugar3 import env
-
-#hulahop.startup(os.path.join(env.get_profile_path(), 'gecko'))
-#from hulahop.webview import WebView
-
-import xml.dom.minidom
 
 SLIDESHOW_TOOLBAR = 1
 NAVIGATION_TOOLBAR = 2
@@ -127,8 +111,6 @@ class ShowNTell(activity.Activity):
         # Create the standard activity toolbox; add our toolbars
         toolbar_box = ToolbarBox()
         self.set_toolbar_box(toolbar_box)
-
-        toolbar = toolbar_box.toolbar
 
         activity_button = ActivityToolbarButton(self)
         toolbar_box.toolbar.insert(activity_button, 0)
@@ -201,7 +183,6 @@ class ShowNTell(activity.Activity):
         self.__progress_lbl = Gtk.Label("Loading slide deck...")
         self.__progress_bar = Gtk.ProgressBar()
         self.__progress_view.pack_start(self.__progress_lbl, True, False, 5)
-        #self.__progress_view.pack_start(self.__progress_bar, False, False, 5)
         self.__progress_bar.set_fraction(
             self.__progress_cur / self.__progress_max)
 
@@ -238,7 +219,6 @@ class ShowNTell(activity.Activity):
     def read_file(self, file_path):
         self.__logger.debug("read_file " + str(file_path))
         print 'read_file:', file_path
-        ftype = utils.getFileType(file_path)
         z = zipfile.ZipFile(file_path, "r")
         for i in z.infolist():
             f = open(os.path.join(self.__deck_dir, i.filename), "wb")
@@ -246,7 +226,8 @@ class ShowNTell(activity.Activity):
             f.close()
         z.close()
         self.__deck.reload()
-        print 'read_file: before', self.__deck.get_title(), self.metadata['title']
+        print 'read_file: before',\
+            self.__deck.get_title(), self.metadata['title']
         self.__makeTB.decktitle_set_new(self.metadata['title'])
         print 'read_file: after', self.__deck.get_title()
         newindex = 0

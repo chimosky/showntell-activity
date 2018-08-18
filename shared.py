@@ -28,7 +28,6 @@ gi.require_version('TelepathyGLib', '0.12')
 from gi.repository import GObject
 from gi.repository import TelepathyGLib
 
-import dbus
 from dbus.service import method, signal
 from dbus.gobject_service import ExportedGObject
 
@@ -46,8 +45,12 @@ PATH = "/edu/washington/cs/ClassroomPresenterXO"
 class Shared(ExportedGObject):
 
     __gsignals__ = {
-        'navigation-lock-change': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_BOOLEAN,)),
-        'deck-download-complete': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
+        'navigation-lock-change': (
+            GObject.SIGNAL_RUN_LAST,
+            GObject.TYPE_NONE,
+            (GObject.TYPE_BOOLEAN,)),
+        'deck-download-complete': (
+            GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
     }
 
     def __init__(self, activity, deck, work_path):
@@ -62,7 +65,6 @@ class Shared(ExportedGObject):
         self.__got_dbus_tube = False
         self.__locked = False
         self.__pservice = presenceservice.get_instance()
-        #self.__owner = self.__pservice.get_owner()
 
         self.__cpxo_path = os.path.join(work_path, 'deck.cpxo')
 
@@ -99,16 +101,15 @@ class Shared(ExportedGObject):
             return
 
         self.__tubes_chan = self.__shared_activity.telepathy_tubes_chan
-        self.__iface = self.__tubes_chan[TelepathyGLib.IFACE_CHANNEL_TYPE_TUBES]
+        self.__iface = self.__tubes_chan[
+            TelepathyGLib.IFACE_CHANNEL_TYPE_TUBES]
 
         self.__text_chan = self.__shared_activity.telepathy_text_chan
-        self.__iface_grp = self.__text_chan[TelepathyGLib.IFACE_CHANNEL_INTERFACE_GROUP]
+        self.__iface_grp = self.__text_chan[
+            TelepathyGLib.IFACE_CHANNEL_INTERFACE_GROUP]
 
         self.__conn = self.__shared_activity.telepathy_conn
         self.__my_handle = self.__conn.GetSelfHandle()
-
-        #self.__shared_activity.connect('buddy-joined', self.buddy_joined_cb)
-        #self.__shared_activity.connect('buddy-left', self.buddy_left_cb)
 
         # takes care of downloading (and then sharing) the slide deck over
         # stream tubes
@@ -132,22 +133,29 @@ class Shared(ExportedGObject):
         else:
             self.__logger.debug(
                 "We are joining, looking for the global dbus tube.")
-            self.__tubes_chan[TelepathyGLib.IFACE_CHANNEL_TYPE_TUBES].ListTubes(
-                reply_handler=self.list_tubes_reply_cb,
-                error_handler=self.list_tubes_error_cb)
+            self.__tubes_chan[
+                TelepathyGLib.IFACE_CHANNEL_TYPE_TUBES].ListTubes(
+                    reply_handler=self.list_tubes_reply_cb,
+                    error_handler=self.list_tubes_error_cb)
 
     """ --- START DBUS TUBE CODE --- """
 
     def deck_download_complete_cb(self, object):
-        """ Catches the local deck_download_complete signal and sends the appropriate dbus signal """
+        """
+        Catches the local deck_download_complete signal and
+        sends the appropriate dbus signal
+        """
         self.__logger.debug(
             "Deck download is complete, sending Deck_Download_Complete dbus signal.")
         self.Deck_Download_Complete()
         self.emit('deck-download-complete')
 
     def student_dl_complete_cb(self, sender):
-        """ Catches the Deck_Download_Complete dbus signal from students, lets us know that they
-            are ready to have initial state information pushed onto them """
+        """
+        Catches the Deck_Download_Complete dbus signal from students,
+        lets us know that they are ready to have initial state information
+        pushed onto them
+        """
         self.__logger.debug(
             "Got Deck_Download_Complete dbus signal, pushing initial state info to student.")
         proxy_object = self.__dbus_tube.get_object(sender, PATH)
@@ -176,7 +184,10 @@ class Shared(ExportedGObject):
                 self.__iface.AcceptDBusTube(tube_id)
 
             self.__dbus_tube = TubeConnection(
-                self.__conn, self.__iface, tube_id, group_iface=self.__iface_grp)
+                self.__conn,
+                self.__iface,
+                tube_id,
+                group_iface=self.__iface_grp)
             self.__got_dbus_tube = True
             self.__logger.debug("Got our dbus tube!")
 
@@ -199,7 +210,10 @@ class Shared(ExportedGObject):
                     path=PATH,
                     sender_keyword='sender')
                 self.__dbus_tube.add_signal_receiver(
-                    self.receive_submission_cb, 'Send_Submission', IFACE, path=PATH)
+                    self.receive_submission_cb,
+                    'Send_Submission',
+                    IFACE,
+                    path=PATH)
             else:
                 self.__deck.connect('ink-submitted', self.submit_ink_cb)
                 self.__dbus_tube.add_signal_receiver(
@@ -209,18 +223,26 @@ class Shared(ExportedGObject):
                 self.__dbus_tube.add_signal_receiver(
                     self.add_ink_path_cb, 'Add_Ink_Path', IFACE, path=PATH)
                 self.__dbus_tube.add_signal_receiver(
-                    self.recv_instr_clear_ink_cb, 'Instructor_Clear_Ink', IFACE, path=PATH)
+                    self.recv_instr_clear_ink_cb,
+                    'Instructor_Clear_Ink',
+                    IFACE, path=PATH)
                 self.__dbus_tube.add_signal_receiver(
-                    self.recv_instr_remove_ink_cb, 'Instructor_Remove_Ink', IFACE, path=PATH)
+                    self.recv_instr_remove_ink_cb,
+                    'Instructor_Remove_Ink',
+                    IFACE, path=PATH)
                 self.__dbus_tube.add_signal_receiver(
-                    self.receive_submission_cb, 'Bcast_Submission', IFACE, path=PATH)
+                    self.receive_submission_cb,
+                    'Bcast_Submission',
+                    IFACE, path=PATH)
 
             # self.__dbus_tube.watch_participants(self.participant_change_cb)
 
             super(Shared, self).__init__(self.__dbus_tube, PATH)
 
     def participant_change_cb(self, added, removed):
-        """ Callback on instructor XO for when someone joins or leaves the tube """
+        """
+        Callback on instructor XO for when someone joins or leaves the tube
+        """
         for handle, bus_name in added:
             buddy = self._get_buddy(handle)
             if buddy is not None:
@@ -243,7 +265,10 @@ class Shared(ExportedGObject):
 
     @signal(dbus_interface=IFACE, signature='')
     def Deck_Download_Complete(self):
-        """ Signal from the student informing instructor that the deck download has finished """
+        """
+        Signal from the student informing instructor that the deck
+        download has finished
+        """
         self.__logger.debug(
             "Sending Deck_Download_Complete signal, ready for initial state info.")
         pass
@@ -275,7 +300,9 @@ class Shared(ExportedGObject):
             self.Slide_Changed(self.__deck.getIndex())
 
     def slide_changed_cb(self, slide_idx):
-        """ Called on the joiners when they receive the Slide_Changed signal """
+        """
+        Called on the joiners when they receive the Slide_Changed signal
+        """
         self.__logger.debug(
             "Received the Slide_Changed signal and changing to slide %d.",
             slide_idx)
@@ -338,7 +365,8 @@ class Shared(ExportedGObject):
                 'CS handle %u belongs to me, %u',
                 cs_handle,
                 handle)
-        elif group.GetGroupFlags() & TelepathyGLib.ChannelGroupFlags.CHANNEL_SPECIFIC_HANDLES:
+        elif group.GetGroupFlags() &\
+                TelepathyGLib.ChannelGroupFlags.CHANNEL_SPECIFIC_HANDLES:
             handle = group.GetHandleOwners([cs_handle])[0]
             self.__logger.debug(
                 'CS handle %u belongs to %u', cs_handle, handle)

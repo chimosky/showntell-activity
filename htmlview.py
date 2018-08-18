@@ -1,12 +1,8 @@
-kimport os
-
 from gi.repository import Gtk
 from gi.repository.WebKit2 import WebView
 
-from sugar3 import env
 from sugar3.activity import activity
 from path import path
-##hulahop.startup(os.path.join(env.get_profile_path(), 'gecko'))
 
 BUNDLEPATH = path(activity.get_bundle_path()) / 'tw'
 DATAPATH = path(activity.get_activity_root()) / 'data'

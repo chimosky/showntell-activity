@@ -9,9 +9,6 @@
 # website: zetcode.com
 # last edited: February 2009
 
-import sys
-import os
-
 from gi.repository import Gtk
 
 from sugar3.activity import activity

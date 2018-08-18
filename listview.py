@@ -62,8 +62,9 @@ class Listview(Gtk.VBox):
         print 'set_store', mountpoint, pth
         store = Gtk.ListStore(str, str, str, str)
         # get objects from the local datastore
-        ds_objects, num_objects = datastore.find({'mountpoints': [mountpoint], 'mime_type': [
-                                                 'image/jpg', 'image/png', 'image/svg', 'image/jpeg']})
+        ds_objects, num_objects = datastore.find({
+            'mountpoints': [mountpoint], 'mime_type': [
+                'image/jpg', 'image/png', 'image/svg', 'image/jpeg']})
         for f in ds_objects:
             try:
                 object = f.object_id

@@ -1,0 +1,6 @@
+[flake8]
+
+# E402 module level import not at top of file
+# F402 import 'path' from line 32 shadowed by loop variable
+
+ignore = E402,F402

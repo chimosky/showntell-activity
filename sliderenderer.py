@@ -23,20 +23,13 @@ import gi
 gi.require_version('WebKit2', '4.0')
 
 import cairo
-import os
 import utils
 import time
 import logging
-import xml.dom.minidom
 
-from sugar3 import env
-from gi.repository import Gtk
-from gi.repository import Gdk
 from gi.repository import Rsvg
 from gi.repository import GdkPixbuf
 from gi.repository.WebKit2 import WebView
-
-#hulahop.startup(os.path.join(env.get_profile_path(), 'gecko'))
 
 
 class Renderer(object):
@@ -62,9 +55,9 @@ class Renderer(object):
 
         ftype = utils.getFileType(layers[0])
 
-        # This may be optimizable to avoid having to open the first layer to get its size,
-        # or at least keeping it around to re-use it when the slide is first
-        # rendered
+        # This may be optimizable to avoid having to open the first layer
+        # to get its size, or at least keeping it around to re-use it when the
+        # slide is first rendered
         if ftype == "svg":
             handle = Rsvg.Handle.new_from_file(layers[0])
             return [handle.width, handle.height]
@@ -78,7 +71,10 @@ class Renderer(object):
             return [640.0, 480.0]
 
     def getSlideDimensions(self, n=None):
-        """Returns the slide dimensions, using the value in the XML file first, if it exists, and then the size of the first layer"""
+        """
+        Returns the slide dimensions, using the value in the XML file first,
+        if it exists, and then the size of the first layer
+        """
         if n is None:
             n = self.__deck.getIndex()
         dims = self.__deck.getSlideDimensionsFromXML(n)
@@ -95,7 +91,6 @@ class Renderer(object):
         timerstart = time.time()
 
         self.__logger.debug("rendering slide " + str(n))
-        ##ctx = gtk.gdk.CairoContext(cairo.Context(surface))
         ctx = cairo.Context(surface)
 
         self.__logger.debug("Got context at " + str(time.time() - timerstart))
@@ -111,7 +106,8 @@ class Renderer(object):
         targh = float(surface.get_height())
         x_scale = targw / srcw
         y_scale = targh / srch
-        print 'rendering slide', str(n), "w=", targw, srcw, x_scale, "h=", targh, srch, y_scale
+        print 'rendering slide', str(n), "w=", targw,\
+            srcw, x_scale, "h=", targh, srch, y_scale
 
         self.__logger.debug("Surface is " + str(targw) + "x" + str(targh))
 
